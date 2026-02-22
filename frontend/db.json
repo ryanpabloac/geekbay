@@ -1,6 +1,14 @@
 {
   "produtos": [
     {
+      "id": "1",
+      "categoria": "Colecionáveis",
+      "codigo": "PKU-001",
+      "nome": "Pikachu Pelúcia",
+      "preco": "100",
+      "img": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
+    },
+    {
       "id": "2",
       "categoria": "Copos",
       "codigo": "COP042",
@@ -53,6 +61,15 @@
       "preco": "250",
       "descricao": "",
       "img": ""
+    },
+    {
+      "id": "aabd",
+      "categoria": "Canecas",
+      "codigo": "123",
+      "nome": "Caneca Batman",
+      "preco": "150,00",
+      "descricao": "",
+      "img": "https://www.google.com/imgres?q=caneca%20batman&imgurl=https%3A%2F%2Fimages.tcdn.com.br%2Fimg%2Fimg_prod%2F352023%2Fcaneca_batman_logos_collection_9155_1_d6b45692ebb55aee3dc9ce64708221e7_20220222135644.jpg&imgrefurl=https%3A%2F%2Fwww.lojadccomics.com.br%2Fcaneca-batman-logos-collection-%3Fsrsltid%3DAfmBOooa4l6Gtt7xs5R_-vM5YuVBVYWT0lPyCMR-yNso4AdAr8HpbR4L&docid=LLwNEN-cZGGbUM&tbnid=sC7bW-9DOje_AM&vet=12ahUKEwiz2LDGn-2SAxXDlJUCHYRANYkQnPAOegQIGRAB..i&w=802&h=1200&hcb=2&ved=2ahUKEwiz2LDGn-2SAxXDlJUCHYRANYkQnPAOegQIGRAB"
     }
   ]
 }
