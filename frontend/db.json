@@ -4,34 +4,16 @@
       "id": "1",
       "categoria": "Colecionáveis",
       "codigo": "PKU-001",
-      "nome": "Pikachu Pelúcia",
+      "nome": "Pikachu ",
       "preco": "100",
       "img": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
-    },
-    {
-      "id": "2",
-      "categoria": "Copos",
-      "codigo": "COP042",
-      "nome": "Copo Térmico Guia do Mochileiro",
-      "preco": "80",
-      "descricao": "Copo de alumínio com a inscrição 'Don't Panic' em letras garrafais.",
-      "imagem_url": "/assets/copo-panic.png"
-    },
-    {
-      "id": "3",
-      "categoria": "Mochilas",
-      "codigo": "MOC117",
-      "nome": "Mochila Tática Master Chief",
-      "preco": 249.9,
-      "descricao": "Mochila reforçada com compartimento para notebook e estética Halo.",
-      "imagem_url": "/assets/mochila-halo.png"
     },
     {
       "id": "4",
       "categoria": "Canetas",
       "codigo": "CNT007",
       "nome": "Caneta Tinteiro Pena de Fênix",
-      "preco": 45,
+      "preco": "60",
       "descricao": "Caneta temática Harry Potter com suporte magnético.",
       "imagem_url": "/assets/caneta-hp.png"
     },
@@ -52,15 +34,6 @@
       "preco": 55,
       "descricao": "Agenda anual com capa em couro sintético e regras do anime.",
       "imagem_url": "/assets/death-note.png"
-    },
-    {
-      "id": "6f44",
-      "categoria": "caneca",
-      "codigo": "1",
-      "nome": "Caneca batman",
-      "preco": "250",
-      "descricao": "",
-      "img": ""
     },
     {
       "id": "aabd",
