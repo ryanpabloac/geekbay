@@ -1,0 +1,58 @@
+{
+  "produtos": [
+    {
+      "id": "2",
+      "categoria": "Copos",
+      "codigo": "COP042",
+      "nome": "Copo Térmico Guia do Mochileiro",
+      "preco": "80",
+      "descricao": "Copo de alumínio com a inscrição 'Don't Panic' em letras garrafais.",
+      "imagem_url": "/assets/copo-panic.png"
+    },
+    {
+      "id": "3",
+      "categoria": "Mochilas",
+      "codigo": "MOC117",
+      "nome": "Mochila Tática Master Chief",
+      "preco": 249.9,
+      "descricao": "Mochila reforçada com compartimento para notebook e estética Halo.",
+      "imagem_url": "/assets/mochila-halo.png"
+    },
+    {
+      "id": "4",
+      "categoria": "Canetas",
+      "codigo": "CNT007",
+      "nome": "Caneta Tinteiro Pena de Fênix",
+      "preco": 45,
+      "descricao": "Caneta temática Harry Potter com suporte magnético.",
+      "imagem_url": "/assets/caneta-hp.png"
+    },
+    {
+      "id": "5",
+      "categoria": "Bonecos",
+      "codigo": "BON999",
+      "nome": "Action Figure Goku Super Saiyajin",
+      "preco": 180,
+      "descricao": "Figura articulada de 15cm com efeitos de aura em PET reciclado.",
+      "imagem_url": "/assets/goku-figure.png"
+    },
+    {
+      "id": "6",
+      "categoria": "Agendas",
+      "codigo": "AGE001",
+      "nome": "Death Note Replica Agenda",
+      "preco": 55,
+      "descricao": "Agenda anual com capa em couro sintético e regras do anime.",
+      "imagem_url": "/assets/death-note.png"
+    },
+    {
+      "id": "6f44",
+      "categoria": "caneca",
+      "codigo": "1",
+      "nome": "Caneca batman",
+      "preco": "250",
+      "descricao": "",
+      "img": ""
+    }
+  ]
+}
