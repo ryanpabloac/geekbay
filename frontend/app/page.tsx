@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import styles from '../styles/Home.module.css';
 
 // Componente de Modal 
-const ModalAviso = ({ mensagem, aoFechar, aoConfirmar }: { 
-  mensagem: string, 
-  aoFechar: () => void, 
-  aoConfirmar?: () => void 
+const ModalAviso = ({ mensagem, aoFechar, aoConfirmar }: {
+  mensagem: string,
+  aoFechar: () => void,
+  aoConfirmar?: () => void
 }) => {
   if (!mensagem) return null;
   return (
@@ -19,7 +19,7 @@ const ModalAviso = ({ mensagem, aoFechar, aoConfirmar }: {
           {aoConfirmar ? (
             <>
               <button onClick={aoConfirmar} className={styles.btnAcao}>Sim, Excluir</button>
-              <button onClick={aoFechar} className={styles.btnAcao} style={{backgroundColor: '#757575'}}>Cancelar</button>
+              <button onClick={aoFechar} className={styles.btnAcao} style={{ backgroundColor: '#757575' }}>Cancelar</button>
             </>
           ) : (
             <button onClick={aoFechar} className={styles.btnAcao}>OK</button>
@@ -34,7 +34,7 @@ export default function Produtos() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [mensagemModal, setMensagemModal] = useState('');
   const [idParaExcluir, setIdParaExcluir] = useState<any>(null);
-  
+
   const [formCadastrar, setFormCadastrar] = useState({
     categoria: '', codigo: '', nome: '', preco: '', descricao: '', img: ''
   });
@@ -123,24 +123,24 @@ export default function Produtos() {
 
       <main className={styles.mainContainer}>
         <div className={styles.containerCards}>
-          
+
           {/* CARD CADASTRAR */}
           <section className={styles.card}>
             <div className={styles.cardTituloImg}>
-              <img src={formCadastrar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{objectFit: 'contain', borderRadius: '8px'}} />
+              <img src={formCadastrar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{ objectFit: 'contain', borderRadius: '8px' }} />
               <h2>Cadastrar Produto</h2>
             </div>
             <form onSubmit={handleCadastrar} className={styles.formulario}>
-              <input className={styles.inputGroup} type="text" placeholder="URL da Imagem" value={formCadastrar.img} 
-                onChange={(e) => setFormCadastrar({...formCadastrar, img: e.target.value})} />
-              <input className={styles.inputGroup} type="text" placeholder="Categoria" value={formCadastrar.categoria} 
-                onChange={(e) => setFormCadastrar({...formCadastrar, categoria: e.target.value})} required />
-              <input className={styles.inputGroup} type="text" placeholder="Código" value={formCadastrar.codigo} 
-                onChange={(e) => setFormCadastrar({...formCadastrar, codigo: e.target.value})} required />
-              <input className={styles.inputGroup} type="text" placeholder="Nome" value={formCadastrar.nome} 
-                onChange={(e) => setFormCadastrar({...formCadastrar, nome: e.target.value})} required />
-              <input className={styles.inputGroup} type="text" placeholder="Preço" value={formCadastrar.preco} 
-                onChange={(e) => setFormCadastrar({...formCadastrar, preco: e.target.value})} required />
+              <input className={styles.inputGroup} type="text" placeholder="URL da Imagem" value={formCadastrar.img}
+                onChange={(e) => setFormCadastrar({ ...formCadastrar, img: e.target.value })} />
+              <input className={styles.inputGroup} type="text" placeholder="Categoria" value={formCadastrar.categoria}
+                onChange={(e) => setFormCadastrar({ ...formCadastrar, categoria: e.target.value })} required />
+              <input className={styles.inputGroup} type="text" placeholder="Código" value={formCadastrar.codigo}
+                onChange={(e) => setFormCadastrar({ ...formCadastrar, codigo: e.target.value })} required />
+              <input className={styles.inputGroup} type="text" placeholder="Nome" value={formCadastrar.nome}
+                onChange={(e) => setFormCadastrar({ ...formCadastrar, nome: e.target.value })} required />
+              <input className={styles.inputGroup} type="text" placeholder="R$ 123,45" value={formCadastrar.preco}
+                onChange={(e) => setFormCadastrar({ ...formCadastrar, preco: e.target.value })} required />
               <button type="submit" className={styles.btnAcao}>Cadastrar</button>
             </form>
           </section>
@@ -148,21 +148,21 @@ export default function Produtos() {
           {/* CARD EDITAR */}
           <section className={styles.card}>
             <div className={styles.cardTituloImg}>
-              <img src={formEditar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{objectFit: 'contain', borderRadius: '8px'}} />
+              <img src={formEditar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{ objectFit: 'contain', borderRadius: '8px' }} />
               <h2>Editar Produto</h2>
             </div>
             <form onSubmit={handleSalvarEdicao} className={styles.formulario}>
               <input type="hidden" value={formEditar.id} />
-              <input className={styles.inputGroup} type="text" placeholder="URL da Imagem" value={formEditar.img} 
-                onChange={(e) => setFormEditar({...formEditar, img: e.target.value})} />
-              <input type="text" className={styles.inputGroup} placeholder="Categoria" value={formEditar.categoria} 
-                onChange={(e) => setFormEditar({...formEditar, categoria: e.target.value})} required />
-              <input className={styles.inputGroup} type="text" placeholder="Código" value={formEditar.codigo} 
-                onChange={(e) => setFormEditar({...formEditar, codigo: e.target.value})} required />
-              <input type="text" className={styles.inputGroup} placeholder="Nome" value={formEditar.nome} 
-                onChange={(e) => setFormEditar({...formEditar, nome: e.target.value})} required />
-              <input type="text" className={styles.inputGroup} placeholder="Preço" value={formEditar.preco} 
-                onChange={(e) => setFormEditar({...formEditar, preco: e.target.value})} required />
+              <input className={styles.inputGroup} type="text" placeholder="URL da Imagem" value={formEditar.img}
+                onChange={(e) => setFormEditar({ ...formEditar, img: e.target.value })} />
+              <input type="text" className={styles.inputGroup} placeholder="Categoria" value={formEditar.categoria}
+                onChange={(e) => setFormEditar({ ...formEditar, categoria: e.target.value })} required />
+              <input className={styles.inputGroup} type="text" placeholder="Código" value={formEditar.codigo}
+                onChange={(e) => setFormEditar({ ...formEditar, codigo: e.target.value })} required />
+              <input type="text" className={styles.inputGroup} placeholder="Nome" value={formEditar.nome}
+                onChange={(e) => setFormEditar({ ...formEditar, nome: e.target.value })} required />
+              <input type="text" className={styles.inputGroup} placeholder="R$ 123,45" value={formEditar.preco}
+                onChange={(e) => setFormEditar({ ...formEditar, preco: e.target.value })} required />
               <button type="submit" className={styles.btnAcao} disabled={!formEditar.id}>Salvar Alterações</button>
             </form>
           </section>
@@ -170,7 +170,11 @@ export default function Produtos() {
 
         {/* LISTA DE PRODUTOS */}
         <section className={`${styles.card} ${styles.secaoListaCard}`}>
-          <h2>Lista de Produtos</h2>
+          <div className={styles.cardTituloImg}>
+            <img src={formEditar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{ objectFit: 'contain', borderRadius: '8px' }} />
+            <h2>Lista de Produtos</h2>
+          </div>
+
           <table className={styles.tabelaContainer}>
             <thead>
               <tr>
@@ -185,9 +189,9 @@ export default function Produtos() {
                 <tr key={p.id}>
                   <td>
                     {p.img ? (
-                       <a href={p.img} target="_blank" rel="noreferrer" style={{fontSize: '10px', color: '#FF7A00'}}>Ver Foto</a>
+                      <a href={p.img} target="_blank" rel="noreferrer" style={{ fontSize: '10px', color: '#FF7A00' }}>Ver Foto</a>
                     ) : (
-                       <span style={{fontSize: '10px'}}>Sem Foto</span>
+                      <span style={{ fontSize: '10px' }}>Sem Foto</span>
                     )}
                   </td>
                   <td>{p.nome}</td>
@@ -206,12 +210,12 @@ export default function Produtos() {
       </main>
 
       {/* Renderização condicional do Modal */}
-      <ModalAviso 
-        mensagem={mensagemModal} 
+      <ModalAviso
+        mensagem={mensagemModal}
         aoFechar={() => {
           setMensagemModal('');
           setIdParaExcluir(null);
-        }} 
+        }}
         aoConfirmar={idParaExcluir && mensagemModal.includes("certeza") ? confirmarExclusao : undefined}
       />
     </div>
