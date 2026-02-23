@@ -4,8 +4,9 @@
       "id": "1",
       "categoria": "Colecionáveis",
       "codigo": "PKU-001",
-      "nome": "Pikachu ",
+      "nome": "Pikachu",
       "preco": "100",
+      "descricao": "Boneco articulado do Pikachu.",
       "img": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
     },
     {
@@ -15,25 +16,25 @@
       "nome": "Caneta Tinteiro Pena de Fênix",
       "preco": "60",
       "descricao": "Caneta temática Harry Potter com suporte magnético.",
-      "imagem_url": "/assets/caneta-hp.png"
+      "img": "/assets/caneta-hp.png"
     },
     {
       "id": "5",
       "categoria": "Bonecos",
       "codigo": "BON999",
       "nome": "Action Figure Goku Super Saiyajin",
-      "preco": 180,
+      "preco": "180",
       "descricao": "Figura articulada de 15cm com efeitos de aura em PET reciclado.",
-      "imagem_url": "/assets/goku-figure.png"
+      "img": "/assets/goku-figure.png"
     },
     {
       "id": "6",
       "categoria": "Agendas",
       "codigo": "AGE001",
       "nome": "Death Note Replica Agenda",
-      "preco": 55,
+      "preco": "55",
       "descricao": "Agenda anual com capa em couro sintético e regras do anime.",
-      "imagem_url": "/assets/death-note.png"
+      "img": "/assets/death-note.png"
     },
     {
       "id": "aabd",
@@ -41,8 +42,84 @@
       "codigo": "123",
       "nome": "Caneca Batman",
       "preco": "150,00",
-      "descricao": "",
-      "img": "https://www.google.com/imgres?q=caneca%20batman&imgurl=https%3A%2F%2Fimages.tcdn.com.br%2Fimg%2Fimg_prod%2F352023%2Fcaneca_batman_logos_collection_9155_1_d6b45692ebb55aee3dc9ce64708221e7_20220222135644.jpg&imgrefurl=https%3A%2F%2Fwww.lojadccomics.com.br%2Fcaneca-batman-logos-collection-%3Fsrsltid%3DAfmBOooa4l6Gtt7xs5R_-vM5YuVBVYWT0lPyCMR-yNso4AdAr8HpbR4L&docid=LLwNEN-cZGGbUM&tbnid=sC7bW-9DOje_AM&vet=12ahUKEwiz2LDGn-2SAxXDlJUCHYRANYkQnPAOegQIGRAB..i&w=802&h=1200&hcb=2&ved=2ahUKEwiz2LDGn-2SAxXDlJUCHYRANYkQnPAOegQIGRAB"
+      "descricao": "Caneca de cerâmica temática.",
+      "img": "https://images.tcdn.com.br/img/img_prod/352023/caneca_batman_logos_collection_9155_1_d6b45692ebb55aee3dc9ce64708221e7_20220222135644.jpg"
+    }
+  ],
+  "estoque": [
+    {
+      "id": 1,
+      "produto_id": "1",
+      "quantidade_disponivel": 15,
+      "quantidade_reservada": 2
+    },
+    {
+      "id": 2,
+      "produto_id": "4",
+      "quantidade_disponivel": 8,
+      "quantidade_reservada": 1
+    },
+    {
+      "id": 3,
+      "produto_id": "5",
+      "quantidade_disponivel": 2,
+      "quantidade_reservada": 5
+    },
+    {
+      "id": 4,
+      "produto_id": "6",
+      "quantidade_disponivel": 25,
+      "quantidade_reservada": 0
+    },
+    {
+      "id": 5,
+      "produto_id": "aabd",
+      "quantidade_disponivel": 0,
+      "quantidade_reservada": 3
+    }
+  ],
+
+  "pedidos": [
+    {
+      "id": 101,
+      "nome_cliente": "Ash Ketchum",
+      "data": "2026-02-22",
+      "status": "Pendente",
+      "valor_total": "100.00",
+      "itens": [
+        { "produto_id": "1", "nome": "Pikachu", "quantidade": 1 }
+      ]
+    },
+    {
+      "id": 102,
+      "nome_cliente": "Bruce Wayne",
+      "data": "2026-02-22",
+      "status": "Pronto",
+      "valor_total": "150.00",
+      "itens": [
+        { "produto_id": "aabd", "nome": "Caneca Batman", "quantidade": 1 }
+      ]
+    },
+    {
+      "id": 103,
+      "nome_cliente": "Son Goku",
+      "data": "2026-02-21",
+      "status": "Cancelado",
+      "valor_total": "180.00",
+      "itens": [
+        { "produto_id": "5", "nome": "Action Figure Goku", "quantidade": 1 }
+      ]
+    },
+    {
+      "id": 104,
+      "nome_cliente": "Ash Ketchum",
+      "data": "2026-02-21",
+      "status": "Pronto",
+      "valor_total": "60.00",
+      "itens": [
+        { "produto_id": "4", "nome": "Caneta Pena de Fênix", "quantidade": 1 }
+      ]
     }
   ]
+
 }
