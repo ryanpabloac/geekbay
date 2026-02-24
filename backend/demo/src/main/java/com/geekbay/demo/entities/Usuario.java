@@ -20,7 +20,7 @@ public class Usuario implements Serializable {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String nome;
 
     @Column(unique = true, nullable = false)
     private String cpf;
@@ -28,14 +28,14 @@ public class Usuario implements Serializable {
     @Column(unique = true, nullable = false)
     private String email;
 
-    private String phone;
+    private String telefone;
 
     @Column(nullable = false)
-    private String password;
+    private String senha;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Profile profile;
+    private Profile perfil;
 
     @Override
     public boolean equals(Object o) {

@@ -33,23 +33,23 @@ class UsuarioControllerTest {
     void createUser_whenValidRequest_returns201AndBody() throws Exception {
         String jsonBody = """
                 {
-                  "name": "Cliente Silveira",
+                  "nome": "Cliente Silveira",
                   "cpf": "12345678900",
                   "email": "admin@email.com",
-                  "phone": "34999999999",
-                  "password": "123456",
-                  "profile": "CLIENTE"
+                  "telefone": "34999999999",
+                  "senha": "123456",
+                  "perfil": "CLIENTE"
                 }
                 """;
 
         Usuario usuarioRetornado = Usuario.builder()
                 .id(1L)
-                .name("Cliente Silveira")
+                .nome("Cliente Silveira")
                 .cpf("12345678900")
                 .email("cliente@email.com")
-                .phone("34999999999")
-                .password("123456")
-                .profile(Profile.CLIENTE)
+                .telefone("34999999999")
+                .senha("123456")
+                .perfil(Profile.CLIENTE)
                 .build();
 
         when(usuarioService.createUser(any(Usuario.class))).thenReturn(usuarioRetornado);
@@ -60,37 +60,37 @@ class UsuarioControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Cliente Silveira"))
+                .andExpect(jsonPath("$.nome").value("Cliente Silveira"))
                 .andExpect(jsonPath("$.cpf").value("12345678900"))
                 .andExpect(jsonPath("$.email").value("cliente@email.com"))
-                .andExpect(jsonPath("$.phone").value("34999999999"))
-                .andExpect(jsonPath("$.profile").value("CLIENTE"));
+                .andExpect(jsonPath("$.telefone").value("34999999999"))
+                .andExpect(jsonPath("$.perfil").value("CLIENTE"));
 
         verify(usuarioService, times(1)).createUser(any(Usuario.class));
     }
 
     @Test
-    @DisplayName("POST /usuarios deve forçar Profile.CLIENTE ao chamar o service (ignora profile do DTO)")
+    @DisplayName("POST /usuarios deve forçar Profile.CLIENTE ao chamar o service (ignora perfil do DTO)")
     void createUser_shouldForceClienteProfile() throws Exception {
         String jsonBody = """
                 {
-                  "name": "Teste",
+                  "nome": "Teste",
                   "cpf": "98765432100",
                   "email": "teste@email.com",
-                  "phone": "34988887777",
-                  "password": "senha",
-                  "profile": "ADMIN"
+                  "telefone": "34988887777",
+                  "senha": "senha",
+                  "perfil": "ADMIN"
                 }
                 """;
 
         Usuario usuarioRetornado = Usuario.builder()
                 .id(10L)
-                .name("Teste")
+                .nome("Teste")
                 .cpf("98765432100")
                 .email("teste@email.com")
-                .phone("34988887777")
-                .password("senha")
-                .profile(Profile.CLIENTE)
+                .telefone("34988887777")
+                .senha("senha")
+                .perfil(Profile.CLIENTE)
                 .build();
 
         when(usuarioService.createUser(any(Usuario.class))).thenReturn(usuarioRetornado);
@@ -105,7 +105,7 @@ class UsuarioControllerTest {
         verify(usuarioService).createUser(captor.capture());
         Usuario enviado = captor.getValue();
 
-        assertThat(enviado.getProfile()).isEqualTo(Profile.CLIENTE);
+        assertThat(enviado.getPerfil()).isEqualTo(Profile.CLIENTE);
         assertThat(enviado.getEmail()).isEqualTo("teste@email.com");
         assertThat(enviado.getCpf()).isEqualTo("98765432100");
     }
@@ -115,11 +115,11 @@ class UsuarioControllerTest {
     void createUser_whenMissingRequiredFields_returns400() throws Exception {
         String jsonBody = """
                 {
-                  "name": "",
+                  "nome": "",
                   "email": "ok@email.com",
-                  "phone": "34999999999",
-                  "password": "123456",
-                  "profile": "CLIENTE"
+                  "telefone": "34999999999",
+                  "senha": "123456",
+                  "perfil": "CLIENTE"
                 }
                 """;
 
@@ -136,12 +136,12 @@ class UsuarioControllerTest {
     void createUser_whenInvalidEmail_returns400() throws Exception {
         String jsonBody = """
                 {
-                  "name": "Teste",
+                  "nome": "Teste",
                   "cpf": "12345678900",
                   "email": "email_invalido",
-                  "phone": "34999999999",
-                  "password": "123456",
-                  "profile": "CLIENTE"
+                  "telefone": "34999999999",
+                  "senha": "123456",
+                  "perfil": "CLIENTE"
                 }
                 """;
 

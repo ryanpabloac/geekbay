@@ -4,9 +4,9 @@ import com.geekbay.demo.enums.Profile;
 
 public record UsuarioResponseDTO(
         Long id,
-        String name,
+        String nome,
         String cpf,
         String email,
-        String phone,
-        Profile profile
+        String telefone,
+        Profile perfil
 ) {}

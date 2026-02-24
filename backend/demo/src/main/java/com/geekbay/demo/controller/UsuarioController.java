@@ -25,24 +25,24 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDTO> createUser(@Valid @RequestBody final UsuarioRequestDTO dto) {
         final Usuario usuario = usuarioService.createUser(
                 Usuario.builder()
-                        .name(dto.name())
+                        .nome(dto.nome())
                         .cpf(dto.cpf())
                         .email(dto.email())
-                        .phone(dto.phone())
-                        .profile(Profile.CLIENTE)
+                        .telefone(dto.telefone())
+                        .perfil(Profile.CLIENTE)
                         // por enquanto em texto (depois a gente coloca BCrypt)
-                        .password(dto.password())
+                        .senha(dto.senha())
                         .build()
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 new UsuarioResponseDTO(
                         usuario.getId(),
-                        usuario.getName(),
+                        usuario.getNome(),
                         usuario.getCpf(),
                         usuario.getEmail(),
-                        usuario.getPhone(),
-                        usuario.getProfile()
+                        usuario.getTelefone(),
+                        usuario.getPerfil()
                 )
         );
     }
