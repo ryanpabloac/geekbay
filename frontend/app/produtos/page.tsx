@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from '../../styles/Home.module.css';
-import Link from 'next/link'; 
+import Link from 'next/link';
 
 const ModalAviso = ({ mensagem, aoFechar, aoConfirmar }: {
   mensagem: string,
@@ -32,14 +32,17 @@ const ModalAviso = ({ mensagem, aoFechar, aoConfirmar }: {
 
 export default function Produtos() {
   const [produtos, setProdutos] = useState<any[]>([]);
-  const [estoque, setEstoque] = useState<any[]>([]); 
+  const [estoque, setEstoque] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
   const [pedidos, setPedidos] = useState<any[]>([]);
+  const [pedidosOriginais, setPedidosOriginais] = useState<any[]>([]);
   const [mensagemModal, setMensagemModal] = useState('');
   const [mostrarModalBusca, setMostrarModalBusca] = useState(false);
   const [termoBusca, setTermoBusca] = useState('');
   const [idParaExcluir, setIdParaExcluir] = useState<any>(null);
 
-  
+
   const [editandoEstoqueId, setEditandoEstoqueId] = useState<number | null>(null);
   const [formEstoque, setFormEstoque] = useState({ disponivel: 0, reservado: 0 });
 
@@ -52,9 +55,21 @@ export default function Produtos() {
 
   useEffect(() => {
     listarTodos();
-    listarEstoque(); 
+    listarEstoque();
     listarPedidos();
+    listarClientes();
   }, []);
+
+  const listarClientes = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/clientes');
+      const dados = await response.json();
+      setClientes(dados);
+    } catch (error) {
+      console.error("Erro ao carregar clientes.");
+    }
+  };
+
 
   const listarTodos = async () => {
     try {
@@ -84,30 +99,9 @@ export default function Produtos() {
       const response = await fetch('http://localhost:5000/pedidos');
       const dados = await response.json();
       setPedidos(dados);
+      setPedidosOriginais(dados);
     } catch (error) { console.error("Erro nos pedidos"); }
   };
-
-  
-const listarPedidosAPreparar = () => {
-  const filtrados = pedidos.filter(p => p.status === 'Pendente');
-  setPedidos(filtrados);
-};
-
-
-const filtrarPorCliente = () => {
-  const nome = prompt("Digite o nome do cliente para buscar:");
-  if (nome) {
-    const filtrados = pedidos.filter(p => 
-      p.nome_cliente.toLowerCase().includes(nome.toLowerCase())
-    );
-    setPedidos(filtrados);
-  }
-};
-
-
-const resetarFiltros = () => {
-  listarPedidos();
-};
 
   const handleCadastrar = async (e: any) => {
     e.preventDefault();
@@ -121,7 +115,7 @@ const resetarFiltros = () => {
       setMensagemModal("Produto cadastrado com sucesso!");
       setFormCadastrar({ categoria: '', codigo: '', nome: '', preco: '', descricao: '', img: '' });
       listarTodos();
-      listarEstoque(); 
+      listarEstoque();
     } catch (error) {
       setMensagemModal("Erro ao cadastrar produto.");
     }
@@ -161,7 +155,7 @@ const resetarFiltros = () => {
       setIdParaExcluir(null);
       setMensagemModal("Produto removido!");
       listarTodos();
-      listarEstoque(); 
+      listarEstoque();
     } catch (error) {
       setMensagemModal("Erro ao excluir produto.");
     }
@@ -169,9 +163,9 @@ const resetarFiltros = () => {
 
   const iniciarEdicaoEstoque = (item: any) => {
     setEditandoEstoqueId(item.id);
-    setFormEstoque({ 
-      disponivel: item.quantidade_disponivel, 
-      reservado: item.quantidade_reservada 
+    setFormEstoque({
+      disponivel: item.quantidade_disponivel,
+      reservado: item.quantidade_reservada
     });
   };
 
@@ -185,7 +179,7 @@ const resetarFiltros = () => {
           quantidade_reservada: formEstoque.reservado
         })
       });
-      
+
       setMensagemModal("Estoque atualizado!");
       setEditandoEstoqueId(null);
       listarEstoque();
@@ -207,25 +201,50 @@ const resetarFiltros = () => {
   };
 
   const listarEScrollar = () => {
-  listarPedidos(); 
-  
-  
-  const elemento = document.getElementById('tabela-pedidos');
-  if (elemento) {
-    elemento.scrollIntoView({ behavior: 'smooth' });
-  }
-};
+    listarPedidos();
+
+
+    const elemento = document.getElementById('tabela-pedidos');
+    if (elemento) {
+      elemento.scrollIntoView({ behavior: 'smooth' });
+    }
+
+  };
 
   return (
-    <div className={styles.corpo}>
+
+    <div className={styles.corpo} style={{
+      backgroundImage: 'url("/bg-GeekBay.png")',
+      backgroundSize: 'cover',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh',
+      paddingBottom: '40px'
+    }}>
       <header className={styles.cabecalho}>
+
         <img src='/icone-GB.png' alt="Logo GeekBay" className={styles.logo} />
-        <h1 className={styles.nomeCabecalho}>GeekBay</h1>
+        <h1 className={styles.nomeCabecalho} style={{ marginRight: "100px" }} >GeekBay</h1>
+
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '30px' }} >
+          <Link href="/" style={{ textDecoration: 'none', color: '#ff7004' }}>
+            Home
+          </Link>
+
+          <Link href="/produtos" style={{ textDecoration: 'none', color: '#ff7004', marginLeft: '40px' }}>
+            Gerenciamento
+          </Link>
+
+          <Link href="/dashboard" style={{ textDecoration: 'none', color: '#ff7004', marginLeft: '40px' }}>
+            Dashboard
+          </Link>
+        </div>
+
       </header>
 
       <main className={styles.mainContainer}>
+
         <div className={styles.containerCards}>
-    
+
           <section className={styles.card}>
             <div className={styles.cardTituloImg}>
               <img src={formCadastrar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{ objectFit: 'contain', borderRadius: '8px' }} />
@@ -246,7 +265,7 @@ const resetarFiltros = () => {
             </form>
           </section>
 
-      
+
           <section className={styles.card}>
             <div className={styles.cardTituloImg}>
               <img src={formEditar.img || '/icone-GB.png'} alt="Preview" className={styles.logoCard} style={{ objectFit: 'cover', borderRadius: '8px' }} />
@@ -269,7 +288,7 @@ const resetarFiltros = () => {
           </section>
         </div>
 
-    
+
         <section className={`${styles.card} ${styles.secaoListaCard}`}>
           <div className={styles.cardTituloImg}>
             <img src='/icone-GB.png' alt="Lista" className={styles.logoCard} />
@@ -309,7 +328,6 @@ const resetarFiltros = () => {
           </table>
         </section>
 
-      
         <section id="secao-estoque" className={`${styles.card} ${styles.secaoListaCard}`} style={{ marginTop: '30px' }}>
           <div className={styles.cardTituloImg}>
             <img src='/icone-GB.png' alt="Estoque" className={styles.logoCard} />
@@ -331,12 +349,12 @@ const resetarFiltros = () => {
                   <td>{e.produto_id}</td>
                   <td>
                     {editandoEstoqueId === e.id ? (
-                      <input 
-                        type="number" 
-                        className={styles.inputGroup} 
+                      <input
+                        type="number"
+                        className={styles.inputGroup}
                         style={{ width: '80px', margin: 0 }}
                         value={formEstoque.disponivel}
-                        onChange={(ev) => setFormEstoque({...formEstoque, disponivel: parseInt(ev.target.value)})}
+                        onChange={(ev) => setFormEstoque({ ...formEstoque, disponivel: parseInt(ev.target.value) })}
                       />
                     ) : (
                       <span style={{ color: e.quantidade_disponivel < 3 ? 'red' : 'inherit' }}>
@@ -346,18 +364,18 @@ const resetarFiltros = () => {
                   </td>
                   <td>
                     {editandoEstoqueId === e.id ? (
-                      <input 
-                        type="number" 
-                        className={styles.inputGroup} 
+                      <input
+                        type="number"
+                        className={styles.inputGroup}
                         style={{ width: '80px', margin: 0 }}
                         value={formEstoque.reservado}
-                        onChange={(ev) => setFormEstoque({...formEstoque, reservado: parseInt(ev.target.value)})}
+                        onChange={(ev) => setFormEstoque({ ...formEstoque, reservado: parseInt(ev.target.value) })}
                       />
                     ) : (
                       e.quantidade_reservada
                     )}
                   </td>
-                  <td style={{display:'flex', justifyContent:'center', alignItems:'center', height: '100%', padding:'10px 0'}}>
+                  <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '10px 0' }}>
                     {editandoEstoqueId === e.id ? (
                       <div style={{ display: 'flex', gap: '5px' }}>
                         <button onClick={() => salvarEstoque(e.id)} className={styles.btnAcao} style={{ padding: '10px 10px' }}>Salvar</button>
@@ -373,52 +391,97 @@ const resetarFiltros = () => {
           </table>
         </section>
 
-        
-<section className={`${styles.card} ${styles.secaoListaCard}`} style={{ marginTop: '30px' }}>
-  <div className={styles.cardTituloImg}>
-    <img src='/icone-GB.png' alt="Pedidos" className={styles.logoCard} />
-    <h2 style={{ color: '#000000' }}>Gerenciar Pedidos</h2>
-  </div>
+        <section id='secao-clientes' className={`${styles.card} ${styles.secaoListaCard}`} style={{ marginTop: '30px' }}>
+          <div className={styles.cardTituloImg}>
+            <img src='/icone-GB.png' alt="Clientes" className={styles.logoCard} />
+            <h2 style={{ color: '#000000' }}>Gerenciar Clientes</h2>
+          </div>
+          <table className={styles.tabelaContainer}>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Cidade</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientes.map((c, index) => (
+                <tr key={index}>
+                  <td>{c.name}</td>
+                  <td>{c.email}</td>
+                  <td>{c.address.city} - {c.address.state}</td>
+                  <td>
+                    <button onClick={() => setClienteSelecionado(c)} className={styles.btnAcao} style={{ width: '100%' }}>
+                      Endereço
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
 
-  <div style={{ display: 'flex', flexWrap:'wrap', gap: '15px', padding: '10px' , alignItems:'center', justifyContent:"center"}}>
-    
-    <button className={styles.btnAcao} onClick={listarEScrollar}>
-      Listar todos os pedidos
-    </button>
-    
-    <button className={styles.btnAcao} onClick={() => setMostrarModalBusca(true)}>
-      Listar todos os pedidos por cliente
-    </button>
-    
+        <section id='secao-pedidos' className={`${styles.card} ${styles.secaoListaCard}`} style={{ marginTop: '30px' }}>
+          <div className={styles.cardTituloImg}>
+            <img src='/icone-GB.png' alt="Pedidos" className={styles.logoCard} />
+            <h2 style={{ color: '#000000' }}>Gerenciar Pedidos</h2>
+          </div>
 
-    <button className={styles.btnAcao}  onClick={() => console.log("Atualizando status...")}>
-      Atualizar status do pedido
-    </button>
-    
-    <button className={styles.btnAcao}  onClick={() => console.log("Cancelando...")}>
-      Cancelar pedido
-    </button>
-
-     <button className={styles.btnAcao}  >
-      Dashboard
-    </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', padding: '10px', alignItems: 'center', justifyContent: "center" }}>
 
 
-  </div>
-  
-</section>
+            <button className={styles.btnAcao} onClick={listarEScrollar}>
+              Listar todos os pedidos
+            </button>
 
+            <button className={styles.btnAcao} onClick={() => setMostrarModalBusca(true)}>
+              Listar todos os pedidos por cliente
+            </button>
 
+            <button className={styles.btnAcao} onClick={() => console.log("Atualizando status...")}>
+              Atualizar status do pedido
+            </button>
+
+            <button className={styles.btnAcao} onClick={() => console.log("Cancelando...")}>
+              Cancelar pedido
+            </button>
+
+            <Link href="/dashboard" className={styles.btnAcao} style={{ textDecoration: 'none', fontFamily: 'sans-serif', textAlign: 'center', fontSize: '12px' }}>
+              Dashboard
+            </Link>
+
+          </div>
+
+        </section>
         <section id='tabela-pedidos' className={`${styles.card} ${styles.secaoListaCard}`} style={{ width: '100%', maxWidth: '1000px', marginTop: '30px' }}>
           <div className={styles.cardTituloImg}>
             <img src='/icone-GB.png' alt="Pedidos" className={styles.logoCard} />
             <h2>Gerenciar Pedidos</h2>
           </div>
+
+
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', flexWrap: 'wrap' }}>
+            <div className={styles.card} style={{ flex: 1, borderLeft: '5px solid #FF7A00' }}>
+              <h3 style={{ color: '#757575', fontSize: '14px' }}>A Preparar</h3>
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#FF7A00' }}>
+                {pedidosOriginais.filter(p => p.status === 'Pendente').length}
+              </p>
+            </div>
+            <div className={styles.card} style={{ flex: 1, borderLeft: '5px solid #FF7A00' }}>
+              <h3 style={{ color: '#757575', fontSize: '14px' }}>Faturamento Total</h3>
+              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff7a00' }}>
+                R$ {pedidosOriginais.reduce((acc, p) => acc + parseFloat(p.valor_total), 0).toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+
           <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
             <button className={styles.btnAcao} onClick={listarPedidos}>Limpar Filtros</button>
             <button className={styles.btnAcao} onClick={() => setPedidos(pedidos.filter(p => p.status === 'Pendente'))}>A Preparar</button>
           </div>
-          <table  className={styles.tabelaContainer}>
+          <table className={styles.tabelaContainer}>
             <thead>
               <tr>
                 <th>Nº</th>
@@ -433,11 +496,10 @@ const resetarFiltros = () => {
                 <tr key={p.id}>
                   <td>#{p.id}</td>
                   <td>{p.nome_cliente}</td>
-                  <td style={{ fontWeight: 'bold', color: p.status === 'Pendente' ? '#FF7A00' : 'green' }}>{p.status}</td>
-                  
-                <td>R$ {p.valor_total}</td>
+                  <td style={{ fontWeight: 'bold', color: p.status === 'Pendente' ? '#FF7A00' : p.status === 'Cancelado' ? '#f44336' : 'green' }}>{p.status}</td>
+                  <td>R$ {p.valor_total}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: '5px', justifyContent:'center' }}>
+                    <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
                       <button onClick={() => atualizarStatusPedido(p.id, 'Pronto')} className={styles.btnAcao} style={{ padding: '5px' }}>Atualizar</button>
                     </div>
                   </td>
@@ -449,50 +511,70 @@ const resetarFiltros = () => {
 
       </main>
 
-{mostrarModalBusca && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalConteudo}>
-      <img src='/icone-GB.png' alt="Busca" className={styles.logoCard} />
-      <h3>Buscar Pedidos por Cliente</h3>
-      
-      <input 
-        type="text" 
-        className={styles.inputGroup} 
-        placeholder="Digite o nome do cliente..." 
-        value={termoBusca}
-        onChange={(e) => setTermoBusca(e.target.value)}
-        style={{ marginTop: '15px', marginBottom: '15px' }}
-        autoFocus
-      />
+      {mostrarModalBusca && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalConteudo}>
+            <img src='/icone-GB.png' alt="Busca" className={styles.logoCard} />
+            <h3>Buscar Pedidos por Cliente</h3>
 
-      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-        <button 
-          className={styles.btnAcao} 
-          onClick={() => {
-            const filtrados = pedidos.filter(p => 
-              p.nome_cliente.toLowerCase().includes(termoBusca.toLowerCase())
-            );
-            setPedidos(filtrados);
-            setMostrarModalBusca(false);
-            setTermoBusca(''); 
-          }}
-        >
-          Buscar
-        </button>
-        <button 
-          className={styles.btnAcao} 
-          style={{ backgroundColor: '#757575' }} 
-          onClick={() => {
-            setMostrarModalBusca(false);
-            setTermoBusca('');
-          }}
-        >
-          Cancelar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <input
+              type="text"
+              className={styles.inputGroup}
+              placeholder="Digite o nome do cliente..."
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+              style={{ marginTop: '15px', marginBottom: '15px' }}
+              autoFocus
+            />
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                className={styles.btnAcao}
+                onClick={() => {
+                  const filtrados = pedidos.filter(p =>
+                    p.nome_cliente.toLowerCase().includes(termoBusca.toLowerCase())
+                  );
+                  setPedidos(filtrados);
+                  setMostrarModalBusca(false);
+                  setTermoBusca('');
+                }}
+              >
+                Buscar
+              </button>
+              <button
+                className={styles.btnAcao}
+                style={{ backgroundColor: '#757575' }}
+                onClick={() => {
+                  setMostrarModalBusca(false);
+                  setTermoBusca('');
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+      )}
+
+      {clienteSelecionado && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalConteudo}>
+            <img src='/icone-GB.png' alt="GeekBay" className={styles.logoCard} />
+            <h3>Endereço de {clienteSelecionado.name}</h3>
+            <div style={{ textAlign: 'left', margin: '15px 0', fontSize: '14px' }}>
+              <p><strong>Rua:</strong> {clienteSelecionado.address.street}, {clienteSelecionado.address.number}</p>
+              <p><strong>Bairro:</strong> {clienteSelecionado.address.neighborhood}</p>
+              <p><strong>Cidade/UF:</strong> {clienteSelecionado.address.city}/{clienteSelecionado.address.state}</p>
+              <p><strong>CEP:</strong> {clienteSelecionado.address.zip_code}</p>
+              <p><strong>Obs:</strong> {clienteSelecionado.address.complement}</p>
+            </div>
+            <button className={styles.btnAcao} onClick={() => setClienteSelecionado(null)}>Fechar</button>
+          </div>
+        </div>
+      )}
+
       <ModalAviso
         mensagem={mensagemModal}
         aoFechar={() => {

@@ -83,7 +83,9 @@
     border-color:#FF7A00;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     align-items: center;
+    scroll-margin-top: 100px;
 }
+
 
 .inputGroup {
     margin-bottom: 10px;
@@ -206,6 +208,23 @@
     color: #333;
     margin: 20px 0;
     font-family: sans-serif;
+}
+
+
+
+.btnAcaoCarrinho{
+    width: 60px;
+    height: 40px;
+    border-radius: 25px;
+    background-color: #333;
+    color: #FF7A00;
+    cursor: pointer;
+}
+
+.btnAcaoCarrinho:hover{
+    background-color: #000000;
+    color:#FF7A00;
+
 }
 
 @keyframes surgimento {

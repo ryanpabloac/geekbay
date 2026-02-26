@@ -1,22 +1,13 @@
 {
   "produtos": [
     {
-      "id": "1",
-      "categoria": "Colecionáveis",
-      "codigo": "PKU-001",
-      "nome": "Pikachu",
-      "preco": "100",
-      "descricao": "Boneco articulado do Pikachu.",
-      "img": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
-    },
-    {
       "id": "4",
       "categoria": "Canetas",
       "codigo": "CNT007",
       "nome": "Caneta Tinteiro Pena de Fênix",
-      "preco": "60",
+      "preco": "20",
       "descricao": "Caneta temática Harry Potter com suporte magnético.",
-      "img": "/assets/caneta-hp.png"
+      "img": "/caneta-hp.jpg"
     },
     {
       "id": "5",
@@ -25,7 +16,7 @@
       "nome": "Action Figure Goku Super Saiyajin",
       "preco": "180",
       "descricao": "Figura articulada de 15cm com efeitos de aura em PET reciclado.",
-      "img": "/assets/goku-figure.png"
+      "img": "/goku.jpg"
     },
     {
       "id": "6",
@@ -34,7 +25,7 @@
       "nome": "Death Note Replica Agenda",
       "preco": "55",
       "descricao": "Agenda anual com capa em couro sintético e regras do anime.",
-      "img": "/assets/death-note.png"
+      "img": "/note.jpg"
     },
     {
       "id": "aabd",
@@ -78,48 +69,131 @@
       "quantidade_reservada": 3
     }
   ],
-
   "pedidos": [
     {
-      "id": 101,
-      "nome_cliente": "Ash Ketchum",
-      "data": "2026-02-22",
+      "id": 1,
+      "nome_cliente": "Arthur Morgan",
+      "status": "Pronto",
+      "valor_total": "120.50",
+      "categoria": "Canecas",
+      "data_pedido": "2026-02-20"
+    },
+    {
+      "id": 2,
+      "nome_cliente": "Princess Zelda",
       "status": "Pendente",
-      "valor_total": "100.00",
-      "itens": [
-        { "produto_id": "1", "nome": "Pikachu", "quantidade": 1 }
-      ]
+      "valor_total": "350.00",
+      "categoria": "Copos",
+      "data_pedido": "2026-02-21"
     },
     {
-      "id": 102,
+      "id": 3,
+      "nome_cliente": "Peter Parker",
+      "status": "Pendente",
+      "valor_total": "89.90",
+      "categoria": "Canetas",
+      "data_pedido": "2026-02-22"
+    },
+    {
+      "id": 4,
       "nome_cliente": "Bruce Wayne",
-      "data": "2026-02-22",
-      "status": "Pronto",
-      "valor_total": "150.00",
-      "itens": [
-        { "produto_id": "aabd", "nome": "Caneca Batman", "quantidade": 1 }
-      ]
-    },
-    {
-      "id": 103,
-      "nome_cliente": "Son Goku",
-      "data": "2026-02-21",
       "status": "Cancelado",
-      "valor_total": "180.00",
-      "itens": [
-        { "produto_id": "5", "nome": "Action Figure Goku", "quantidade": 1 }
-      ]
+      "valor_total": "1500.00",
+      "categoria": "Mochilas",
+      "data_pedido": "2026-02-22"
     },
     {
-      "id": 104,
-      "nome_cliente": "Ash Ketchum",
-      "data": "2026-02-21",
+      "id": 5,
+      "nome_cliente": "Diana Prince",
+      "status": "Pendente",
+      "valor_total": "210.00",
+      "categoria": "Agendas",
+      "data_pedido": "2026-02-23"
+    },
+    {
+      "id": 6,
+      "nome_cliente": "Tony Stark",
       "status": "Pronto",
-      "valor_total": "60.00",
-      "itens": [
-        { "produto_id": "4", "nome": "Caneta Pena de Fênix", "quantidade": 1 }
-      ]
+      "valor_total": "450.25",
+      "categoria": "Bonecos",
+      "data_pedido": "2026-02-23"
+    }
+  ],
+  "clientes": [
+    {
+      "name": "Bruce Wayne",
+      "cpf": "111.222.333-44",
+      "email": "batman@geekbay.com",
+      "phone": "(11) 98888-0000",
+      "address": {
+        "zip_code": "01234-567",
+        "street": "Estrada da Mansão Wayne",
+        "number": "1000",
+        "neighborhood": "Gotham",
+        "city": "São Paulo",
+        "state": "SP",
+        "complement": "Batcaverna nos fundos"
+      }
+    },
+    {
+      "name": "Peter Parker",
+      "cpf": "222.333.444-55",
+      "email": "spidey@geekbay.com",
+      "phone": "(21) 97777-1111",
+      "address": {
+        "zip_code": "20000-000",
+        "street": "Rua da Tia May",
+        "number": "20",
+        "neighborhood": "Queens",
+        "city": "Rio de Janeiro",
+        "state": "RJ",
+        "complement": "Apto 302"
+      }
+    },
+    {
+      "name": "Hermione Granger",
+      "cpf": "333.444.555-66",
+      "email": "hermione@geekbay.com",
+      "phone": "(31) 96666-2222",
+      "address": {
+        "zip_code": "30123-456",
+        "street": "Rua dos Bruxos",
+        "number": "9 ¾",
+        "neighborhood": "Savassi",
+        "city": "Belo Horizonte",
+        "state": "MG",
+        "complement": "Biblioteca Particular"
+      }
+    },
+    {
+      "name": "Tony Stark",
+      "cpf": "444.555.666-77",
+      "email": "ironman@geekbay.com",
+      "phone": "(11) 95555-3333",
+      "address": {
+        "zip_code": "04567-890",
+        "street": "Avenida das Indústrias Stark",
+        "number": "500",
+        "neighborhood": "Brooklin",
+        "city": "São Paulo",
+        "state": "SP",
+        "complement": "Cobertura"
+      }
+    },
+    {
+      "name": "Leia Organa",
+      "cpf": "555.666.777-88",
+      "email": "leia@geekbay.com",
+      "phone": "(61) 94444-4444",
+      "address": {
+        "zip_code": "70000-000",
+        "street": "Via Galáctica",
+        "number": "S/N",
+        "neighborhood": "Alderaan",
+        "city": "Brasília",
+        "state": "DF",
+        "complement": "Palácio Real"
+      }
     }
   ]
-
 }

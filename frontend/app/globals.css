@@ -10,3 +10,7 @@ body {
     background-color: #F6F6F6; /* O cinza bem claro que aparece no fundo do Figma */
     min-height: 100vh;
 }
+ 
+html {
+  scroll-behavior: smooth;
+}
