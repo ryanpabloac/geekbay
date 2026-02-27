@@ -124,6 +124,7 @@
       "name": "Bruce Wayne",
       "cpf": "111.222.333-44",
       "email": "batman@geekbay.com",
+      "senha": "111",
       "phone": "(11) 98888-0000",
       "address": {
         "zip_code": "01234-567",
@@ -139,6 +140,7 @@
       "name": "Peter Parker",
       "cpf": "222.333.444-55",
       "email": "spidey@geekbay.com",
+      "senha": "222",
       "phone": "(21) 97777-1111",
       "address": {
         "zip_code": "20000-000",
@@ -154,6 +156,7 @@
       "name": "Hermione Granger",
       "cpf": "333.444.555-66",
       "email": "hermione@geekbay.com",
+      "senha": "333",
       "phone": "(31) 96666-2222",
       "address": {
         "zip_code": "30123-456",
@@ -169,6 +172,7 @@
       "name": "Tony Stark",
       "cpf": "444.555.666-77",
       "email": "ironman@geekbay.com",
+      "senha": "444",
       "phone": "(11) 95555-3333",
       "address": {
         "zip_code": "04567-890",
@@ -184,6 +188,7 @@
       "name": "Leia Organa",
       "cpf": "555.666.777-88",
       "email": "leia@geekbay.com",
+      "senha": "555",
       "phone": "(61) 94444-4444",
       "address": {
         "zip_code": "70000-000",
@@ -194,6 +199,32 @@
         "state": "DF",
         "complement": "Palácio Real"
       }
+    },
+    {
+      "name": "Capitão América",
+      "cpf": "123.456.789-41",
+      "email": "capitao@america.com",
+      "phone": "(78) 9999-6544",
+      "senha": "999",
+      "address": {
+        "zip_code": "12456-87",
+        "street": "Rua do Escudo, 222",
+        "complement": "Hospital Martelo do Thor"
+      },
+      "id": "2939"
+    },
+    {
+      "name": "",
+      "cpf": "",
+      "email": "",
+      "phone": "",
+      "senha": "",
+      "address": {
+        "zip_code": "",
+        "street": "",
+        "complement": ""
+      },
+      "id": "3240"
     }
   ]
 }

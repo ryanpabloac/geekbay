@@ -57,7 +57,7 @@ export default function Loja() {
                 <h1 className={styles.nomeCabecalho} style={{ marginRight: "100px" }}>GeekBay Store</h1>
 
                 <div style={{ display: 'flex', gap: '50px', alignItems: 'center' }}>
-                    <Link href="" style={{ textDecoration: 'none', color: '#ff7004', marginLeft: '200px' }}>Login</Link>
+                    <Link href="/login" style={{ textDecoration: 'none', color: '#ff7004', marginLeft: '200px' }}>Login</Link>
 
                     <button onClick={() => setMostrarCarrinho(true)} className={styles.btnAcaoCarrinho} >
                         <img src="/carrinhoGB.png" alt="carrinho de compras" style={{ width: '20px' }} /> ({carrinho.length})
