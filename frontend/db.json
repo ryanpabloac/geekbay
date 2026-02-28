@@ -1,15 +1,6 @@
 {
   "produtos": [
     {
-      "id": "4",
-      "categoria": "Canetas",
-      "codigo": "CNT007",
-      "nome": "Caneta Tinteiro Pena de Fênix",
-      "preco": "20",
-      "descricao": "Caneta temática Harry Potter com suporte magnético.",
-      "img": "/caneta-hp.jpg"
-    },
-    {
       "id": "5",
       "categoria": "Bonecos",
       "codigo": "BON999",
@@ -39,10 +30,9 @@
   ],
   "estoque": [
     {
-      "id": 1,
-      "produto_id": "1",
       "quantidade_disponivel": 15,
-      "quantidade_reservada": 2
+      "quantidade_reservada": 2,
+      "id": 1
     },
     {
       "id": 2,

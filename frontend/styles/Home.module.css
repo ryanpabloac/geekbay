@@ -237,7 +237,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10001; /* Fica acima do cabeçalho e modais */
+    z-index: 10001; 
 }
 
 .videoIntro {
@@ -247,7 +247,7 @@
     border-radius: 20px;
     box-shadow: 0 0 40px #ff7a00;
 }
-/* Classe para o conteúdo da loja quando o vídeo sumir */
+
 .lojaConteudo {
     transition: filter 0.5s ease;
 }
@@ -256,7 +256,22 @@
     filter: blur(10px);
 }
 
+.logoPulsante {
+    width: 50px;
+    height: 60px;
+    animation: pulsar 0.8s infinite ease-in-out;
+    cursor: pointer;
+}
+
 @keyframes surgimento {
     from { transform: scale(0.7); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+
+
+@keyframes pulsar {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); } 
+    100% { transform: scale(1); }
+}
+
