@@ -39,6 +39,30 @@ export default function FinalizarCompra() {
         };
     }, []);
 
+
+    const alterarQuantidade = (id: string, tipo: 'aumentar' | 'diminuir') => {
+    const novaLista = itensCarrinho.map(item => {
+        if (item.id === id) {
+            const quantidadeAtual = item.quantidade || 1;
+
+            const novaQuantidade =
+                tipo === 'aumentar'
+                    ? quantidadeAtual + 1
+                    : quantidadeAtual > 1
+                        ? quantidadeAtual - 1
+                        : 1;
+
+            return { ...item, quantidade: novaQuantidade };
+        }
+        return item;
+    });
+
+    setItensCarrinho(novaLista);
+    localStorage.setItem('geekbay_cart', JSON.stringify(novaLista));
+};
+
+
+
     const calcularSubtotal = () => {
         return itensCarrinho.reduce((acc, item) => {
             const preco = typeof item.preco === 'string'
@@ -71,6 +95,7 @@ export default function FinalizarCompra() {
         }
     };
 
+
     const confirmarCompra = async () => {
     if (!metodoPagamento) return;
 
@@ -83,6 +108,9 @@ export default function FinalizarCompra() {
     localStorage.removeItem('geekbay_cart');
     setMostrarAgradecimento(true);
 };
+
+
+
 
     return (
         <div className={styles.corpo} style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', minHeight: '100vh' }}>
@@ -118,9 +146,44 @@ export default function FinalizarCompra() {
                                             <img src={item.img} alt={item.nome} style={{ width: '120px', height: '120px', objectFit: 'contain', border: '1px solid #FF7A00', borderRadius: '10px' }} />
                                             <div style={{ flex: 1 }}>
                                                 <h3 style={{ fontSize: '18px', marginBottom: '5px' }}>{item.nome}
-                                                    <span style={{ color: '#ff7a00', marginLeft: '10px', fontSize: '16px' }}>
-                                                        (x{item.quantidade || 1})
-                                                    </span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                                                        <button
+                                                            onClick={() => alterarQuantidade(item.id, 'diminuir')}
+                                                            style={{
+                                                                width: '30px',
+                                                                height: '30px',
+                                                                borderRadius: '6px',
+                                                                border: '2px solid #FF7A00',
+                                                                background: 'white',
+                                                                cursor: 'pointer',
+                                                                fontWeight: 'bold'
+                                                            }}
+                                                        >
+                                                            -
+                                                        </button>
+
+                                                        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                                                            {item.quantidade || 1}
+                                                        </span>
+
+                                                        <button
+                                                            onClick={() => alterarQuantidade(item.id, 'aumentar')}
+                                                            style={{
+                                                                width: '30px',
+                                                                height: '30px',
+                                                                borderRadius: '6px',
+                                                                border: '2px solid #FF7A00',
+                                                                background: '#FF7A00',
+                                                                color: 'white',
+                                                                cursor: 'pointer',
+                                                                fontWeight: 'bold'
+                                                            }}
+                                                        >
+                                                            +
+                                                        </button>
+
+                                                    </div>
+
                                                 </h3>
                                                 <p style={{ maxWidth:'450px', fontSize: '13px', color: '#666', fontFamily:'sans-serif' }}>
                                                     <strong>Especificações Técnicas: </strong>{item.descricao}</p>

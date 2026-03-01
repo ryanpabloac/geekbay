@@ -2,7 +2,7 @@
   "produtos": [
     {
       "id": "5",
-      "categoria": "Bonecos",
+      "categoria": "bonecos",
       "codigo": "BON999",
       "nome": "Action Figure Goku Super Saiyajin",
       "preco": "180",
@@ -11,7 +11,7 @@
     },
     {
       "id": "6",
-      "categoria": "Agendas",
+      "categoria": "agendas",
       "codigo": "AGE001",
       "nome": "Death Note Replica Agenda",
       "preco": "55",
@@ -20,12 +20,111 @@
     },
     {
       "id": "aabd",
-      "categoria": "Canecas",
+      "categoria": "canecas",
       "codigo": "123",
       "nome": "Caneca Batman",
       "preco": "150,00",
       "descricao": "Caneca de cerâmica temática.",
       "img": "https://images.tcdn.com.br/img/img_prod/352023/caneca_batman_logos_collection_9155_1_d6b45692ebb55aee3dc9ce64708221e7_20220222135644.jpg"
+    },
+    {
+      "id": "a001",
+      "categoria": "agendas",
+      "codigo": "201",
+      "nome": "Agenda Gamer 2026",
+      "preco": "89,90",
+      "descricao": "Agenda temática gamer com capa dura.",
+      "img": "https://images.unsplash.com/photo-1586281380349-632531db7ed4"
+    },
+    {
+      "id": "a002",
+      "categoria": "agendas",
+      "codigo": "202",
+      "nome": "Agenda Geek Minimalista",
+      "preco": "79,90",
+      "descricao": "Agenda estilizada para organização diária.",
+      "img": "https://images.unsplash.com/photo-1517842645767-c639042777db"
+    },
+    {
+      "id": "c001",
+      "categoria": "canecas",
+      "codigo": "301",
+      "nome": "Caneca Hero Black",
+      "preco": "59,90",
+      "descricao": "Caneca de cerâmica temática geek.",
+      "img": "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d"
+    },
+    {
+      "id": "c002",
+      "categoria": "canecas",
+      "codigo": "302",
+      "nome": "Caneca Pixel Art",
+      "preco": "69,90",
+      "descricao": "Caneca personalizada estilo retrô gamer.",
+      "img": "https://images.unsplash.com/photo-1577937927133-66ef06acdf18"
+    },
+    {
+      "id": "ct001",
+      "categoria": "canetas",
+      "codigo": "401",
+      "nome": "Caneta Stylus Tech",
+      "preco": "39,90",
+      "descricao": "Caneta moderna para uso diário.",
+      "img": "https://images.unsplash.com/photo-1583485088034-697b5bc36b70"
+    },
+    {
+      "id": "ct002",
+      "categoria": "canetas",
+      "codigo": "402",
+      "nome": "Caneta Metal Premium",
+      "preco": "49,90",
+      "descricao": "Caneta metálica elegante.",
+      "img": "https://images.unsplash.com/photo-1588776814546-ec7e9b6f6f08"
+    },
+    {
+      "id": "cp001",
+      "categoria": "copos",
+      "codigo": "501",
+      "nome": "Copo Térmico Inox",
+      "preco": "99,90",
+      "descricao": "Copo térmico resistente.",
+      "img": "https://images.unsplash.com/photo-1602526210214-6b6f1d2b7c4e"
+    },
+    {
+      "id": "cp002",
+      "categoria": "copos",
+      "codigo": "502",
+      "nome": "Copo Gamer Edition",
+      "preco": "109,90",
+      "descricao": "Copo estilizado para fãs de games.",
+      "img": "https://images.unsplash.com/photo-1590080874088-eec64895b423"
+    },
+    {
+      "id": "m001",
+      "categoria": "mochilas",
+      "codigo": "601",
+      "nome": "Mochila Tech Pro",
+      "preco": "249,90",
+      "descricao": "Mochila resistente para notebooks.",
+      "img": "https://images.unsplash.com/photo-1581605405669-fcdf81165afa"
+    },
+    {
+      "id": "m002",
+      "categoria": "mochilas",
+      "codigo": "602",
+      "nome": "Mochila Street Geek",
+      "preco": "219,90",
+      "descricao": "Mochila urbana estilizada.",
+      "img": "https://images.unsplash.com/photo-1506629905607-05c1c7f3bfe0"
+    },
+    {
+      "id": "b001",
+      "categoria": "bonecos",
+      "codigo": "701",
+      "nome": "Boneco Action Hero",
+      "preco": "189,90",
+      "descricao": "Boneco colecionável articulado.",
+      "img": "https://images.unsplash.com/photo-1594737625785-a6cbdabd333c"
     }
   ],
   "estoque": [

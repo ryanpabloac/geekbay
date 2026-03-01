@@ -439,13 +439,13 @@ export default function Produtos() {
               Listar todos os pedidos por cliente
             </button>
 
-            <button className={styles.btnAcao} onClick={() => console.log("Atualizando status...")}>
+            {/*<button className={styles.btnAcao} onClick={() => console.log("Atualizando status...")}>
               Atualizar status do pedido
             </button>
 
             <button className={styles.btnAcao} onClick={() => console.log("Cancelando...")}>
               Cancelar pedido
-            </button>
+            </button>*/}
 
             <Link href="/dashboard" className={styles.btnAcao} style={{ textDecoration: 'none', fontFamily: 'sans-serif', textAlign: 'center', fontSize: '12px' }}>
               Dashboard
