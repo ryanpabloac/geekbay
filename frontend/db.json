@@ -215,6 +215,32 @@
         "complement": ""
       },
       "id": "3240"
+    },
+    {
+      "name": "Mario Bros",
+      "cpf": "555.222.444-89",
+      "email": "mario@bros.com",
+      "phone": "(11) 22223-3335",
+      "senha": "0604",
+      "address": {
+        "zip_code": "78965-418",
+        "street": "rua do yoshi, 43",
+        "complement": "cogumelo azul"
+      },
+      "id": "9085"
+    },
+    {
+      "name": "Mario Bros",
+      "cpf": "555.222.444-89",
+      "email": "mario@bros.com",
+      "phone": "(11) 22223-3335",
+      "senha": "0604",
+      "address": {
+        "zip_code": "78965-418",
+        "street": "rua do yoshi, 43",
+        "complement": "cogumelo azul"
+      },
+      "id": "1468"
     }
   ]
 }

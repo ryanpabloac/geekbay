@@ -263,6 +263,22 @@
     cursor: pointer;
 }
 
+.containerListaCheckout {
+    display: flex;
+    flex-direction: column; 
+    gap: 20px;
+    width: 100%;
+    align-items: center;
+}
+
+
+.cardFinalizar {
+    width: 95%; 
+    max-width: 850px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
 @keyframes surgimento {
     from { transform: scale(0.7); opacity: 0; }
     to { transform: scale(1); opacity: 1; }

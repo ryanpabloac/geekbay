@@ -71,9 +71,6 @@ export default function Loja() {
     });
 };
 
-    const removerDoCarrinho = (id: string) => {
-        setCarrinho(carrinho.filter(item => item.id !== id));
-    };
 
     const calcularTotal = () => {
         return carrinho.reduce((acc, item) => {
@@ -154,7 +151,6 @@ export default function Loja() {
                                                 <th>Item</th>
                                                 <th>Qtd</th>
                                                 <th>Preço</th>
-                                                <th>Remover</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -163,9 +159,6 @@ export default function Loja() {
                                                     <td>{item.nome}</td>
                                                     <td>{item.quantidade}</td>
                                                     <td>R$ {item.preco}</td>
-                                                    <td>
-                                                        <button onClick={() => removerDoCarrinho(item.id)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>❌</button>
-                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>

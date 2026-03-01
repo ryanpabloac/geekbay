@@ -74,9 +74,10 @@ export default function Login() {
             const clienteEncontrado = clientes[0];
     
             if (clienteEncontrado && clienteEncontrado.senha === senha) {
+                localStorage.setItem('usuario_logado', JSON.stringify(clienteEncontrado));
+               
                 setMensagemModal(`Bem-vindo de volta, ${clienteEncontrado.name}!`);
                 
-            
                 setTimeout(() => {
                     router.push('/loja');
                 }, 2000);
