@@ -14,12 +14,19 @@ import java.util.List;
 @RequestMapping("/categorias")
 public class CategoriaController {
 
-    private final CategoriaService service;
+    private final CategoriaService categoriaService;
 
 
     @GetMapping
-    public List<CategoriaResponseDTO> findAll() {
-        return service.findAll();
+    public List<CategoriaResponseDTO> getCategories() {
+        return categoriaService.findAll()
+                .stream()
+                .map(categoria -> new CategoriaResponseDTO(
+                        categoria.getId(),
+                        categoria.getNome(),
+                        categoria.getDescricao()
+                ))
+                .toList();
     }
 }
 
