@@ -1,4 +1,7 @@
 package com.geekbay.demo.dtos.categoria;
 
-public class CategoriaResponseDTO {
-}
+public record CategoriaResponseDTO(
+        Long id,
+        String nome,
+        String descricao
+){}
