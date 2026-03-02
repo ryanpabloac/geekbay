@@ -1,4 +1,11 @@
 package com.geekbay.demo.dtos.estoque;
 
-public class EstoqueRequestDTO {
+import jakarta.validation.constraints.NotNull;
+
+public record EstoqueRequestDTO(
+        @NotNull
+        Integer quantidade,
+        @NotNull
+        Integer produto_id
+){
 }

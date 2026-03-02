@@ -3,6 +3,7 @@ package com.geekbay.demo.entities.produto;
 import com.geekbay.demo.dtos.categoria.CategoriaResponseDTO;
 import com.geekbay.demo.dtos.produto.ProdutoRequestDTO;
 import com.geekbay.demo.entities.categoria.Categoria;
+import com.geekbay.demo.entities.estoque.Estoque;
 import jakarta.persistence.*;
 
 import java.util.Objects;
