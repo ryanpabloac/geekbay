@@ -10,8 +10,8 @@ import jakarta.persistence.*;
 @Table(name = "estoque")
 public class Estoque {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @SequenceGenerator(name = "estoque_seq", sequenceName = "estoque_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "estoque_seq")
+    @SequenceGenerator(name = "estoque_seq", sequenceName = "estoque_seq",  allocationSize = 1)
     private Integer id;
     @Column(name = "quantidade", nullable = false)
     private Integer quantidade;
