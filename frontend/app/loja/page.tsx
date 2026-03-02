@@ -7,6 +7,7 @@ import Link from 'next/link';
 export default function Loja() {
     const [produtos, setProdutos] = useState<any[]>([]);
     const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>('todas');
+    const [produtoInfo, setProdutoInfo] = useState<any | null>(null);
     const [carrinho, setCarrinho] = useState<any[]>([]);
     const [mostrarCarrinho, setMostrarCarrinho] = useState(false);
     const [mostrarIntro, setMostrarIntro] = useState(true);
@@ -195,10 +196,29 @@ export default function Loja() {
                                 className={styles.card}
                                 style={
                                     categoriaSelecionada === "todas"
-                                        ? { textAlign: "center" }
-                                        : { textAlign: "center", minWidth: "280px", flexShrink: 0 }
+                                        ? { textAlign: "center", position: "relative" }
+                                        : { textAlign: "center", minWidth: "280px", flexShrink: 0, position:"relative" }
                                 }
                             >
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "10px",
+                                        right: "10px",
+                                        cursor: "pointer",
+                                        fontSize: "20px"
+                                    }}
+                                     onClick={() => setProdutoInfo(p)}
+                                    >
+                                    <img
+                                        src="/info.png"
+                                        alt="Informações"
+                                        style={{
+                                                width: "22px",
+                                                height: "22px"
+                                                }}
+                                    />
+                                    </div>
 
                                 <img src={p.img || '/icone-GB.png'} alt={p.nome} style={{ height: '130px', objectFit: 'contain', borderRadius: '8px' }} />
                                 <h3 style={{ marginTop: '15px', fontSize: '16px' }}>{p.nome}</h3>
@@ -250,6 +270,38 @@ export default function Loja() {
                     </div>
                 )}
             </div>
+
+                {produtoInfo && (
+  <div className={styles.modalOverlay}>
+    <div className={styles.modalConteudo} style={{ maxWidth: "500px" }}>
+      <h3 style={{ color: "#ff7a00" }}>{produtoInfo.nome}</h3>
+
+      <img
+        src={produtoInfo.img}
+        alt={produtoInfo.nome}
+        style={{ width: "100%", height: "200px", objectFit: "contain" }}
+      />
+
+      <p style={{ marginTop: "15px" }}>
+        {produtoInfo.descricao}
+      </p>
+
+      <p style={{ fontWeight: "bold", fontSize: "20px", color: "#ff7a00" }}>
+        R$ {produtoInfo.preco}
+      </p>
+
+      <button
+        className={styles.btnAcao}
+        style={{ marginTop: "15px", width: "100%" }}
+        onClick={() => setProdutoInfo(null)}
+      >
+        Fechar
+      </button>
+    </div>
+  </div>
+)}
+
+
         </>
 
     );
