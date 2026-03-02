@@ -1,6 +1,5 @@
 package com.geekbay.demo.services;
 
-import com.geekbay.demo.entities.Categoria;
 import com.geekbay.demo.repositories.CategoriaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

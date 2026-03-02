@@ -1,6 +1,5 @@
 package com.geekbay.demo.controller;
 
-import com.geekbay.demo.entities.Categoria;
 import com.geekbay.demo.services.CategoriaService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
