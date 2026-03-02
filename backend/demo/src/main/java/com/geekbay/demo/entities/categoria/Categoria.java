@@ -2,6 +2,7 @@ package com.geekbay.demo.entities.categoria;
 
 
 import com.geekbay.demo.dtos.categoria.CategoriaRequestDTO;
+import com.geekbay.demo.entities.produto.Produto;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
