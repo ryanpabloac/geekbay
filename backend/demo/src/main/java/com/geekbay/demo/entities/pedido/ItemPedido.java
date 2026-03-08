@@ -1,48 +1,50 @@
 package com.geekbay.demo.entities.pedido;
 
+import com.geekbay.demo.entities.produto.Produto;
+import com.geekbay.demo.exceptions.InvalidValueException;
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.Objects;
 
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 public class ItemPedido {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
+
+    @Column(nullable = false)
     private Integer quantidade;
 
     @ManyToOne
-    @JoinColumn(name="pedido_id")
+    @JoinColumn(name="pedido_id", nullable = false)
     private Pedido pedido;
 
-    //private Produto produto;
-    protected ItemPedido() {}
-    public ItemPedido(int quantidade, Pedido pedido) {
+    @ManyToOne
+    @JoinColumn(name = "produto_id", nullable = false)
+    private Produto produto;
+
+    public ItemPedido(int quantidade, Produto produto, Pedido pedido) {
         Objects.requireNonNull(pedido, "Pedido é obrigatório");
-        adicionarQuantidade(quantidade);
+        Objects.requireNonNull(produto, "Produto é obrigatório");
+        setQuantidade(quantidade);
     }
-    ItemPedido(long id, int quantidade, Pedido pedido) {
+
+    ItemPedido(long id, int quantidade, Produto produto, Pedido pedido) {
         this.id = id;
         Objects.requireNonNull(pedido, "Pedido é obrigatório");
-        adicionarQuantidade(quantidade);
+        Objects.requireNonNull(produto, "Produto é obrigatório");
+        setQuantidade(quantidade);
     }
 
-    void adicionarQuantidade(int quantidade) {
+    public void setQuantidade(int quantidade) {
         if(quantidade < 0)
-            throw new IllegalArgumentException("A quantidade a adicionar deve ser um número positivo");
+            throw new InvalidValueException("Quantidade deve ser um valor positivo");
 
-        this.quantidade += quantidade;
-    }
-    void removerQuantidade(int quantidade) {
-        if (quantidade < 0)
-            throw new IllegalArgumentException("A quantidade a remover deve ser um número positivo");
-
-        this.quantidade -= quantidade;
+        this.quantidade = quantidade;
     }
 }
