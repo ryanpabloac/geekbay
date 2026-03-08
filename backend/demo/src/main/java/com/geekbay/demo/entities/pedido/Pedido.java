@@ -6,6 +6,8 @@ import com.geekbay.demo.entities.produto.Produto;
 import com.geekbay.demo.enums.OrderStatus;
 import com.geekbay.demo.exceptions.InvalidOrderDateException;
 import com.geekbay.demo.exceptions.InvalidValueException;
+import com.geekbay.demo.exceptions.NotFoundException;
+import com.geekbay.demo.exceptions.UnauthorizedOperationException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -16,6 +18,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -44,12 +48,13 @@ public class Pedido {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    @OneToMany(mappedBy = "item_pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemPedido> itens;
 
     public Pedido(Usuario usuario) {
         Objects.requireNonNull(usuario, "Usuário é obrigatório");
         this.usuario = usuario;
+        this.status = OrderStatus.CARRINHO;
     }
 
     public void setDataPedido(LocalDateTime dataPedido) {
@@ -90,15 +95,34 @@ public class Pedido {
         this.endereco = endereco;
     }
 
-    public void addItem(Produto produto, int quantidade) {
-        if(quantidade < 0)
-            throw new InvalidValueException("Quantidade deve ser uma valor positivo");
+    public void adicionarItem(Produto produto, int quantidade) {
+        if(!this.status.equals(OrderStatus.CARRINHO))
+            throw new UnauthorizedOperationException("Não é possível alterar um pedido depois de finalizado");
 
         ItemPedido itemPedido = new ItemPedido(quantidade,produto,this);
         this.itens.add(itemPedido);
     }
 
-    public void removeItem(ItemPedido itemPedido) {
-        itens.removeIf(ip -> ip.equals(itemPedido));
+    public void removerItem(Produto produto) {
+        if(!this.status.equals(OrderStatus.CARRINHO))
+            throw new UnauthorizedOperationException("Não é possível alterar um pedido depois de finalizado");
+
+        itens.removeIf(ip -> ip.getProduto().equals(produto));
+    }
+
+    public void modificarQuantidade(Produto produto, int quantidade) {
+        if(!this.status.equals(OrderStatus.CARRINHO))
+            throw new UnauthorizedOperationException("Não é possível alterar um pedido depois de finalizado");
+
+        Stream<ItemPedido> itemPedidoStream = itens.stream()
+                .filter(ip -> ip.getProduto().equals(produto));
+
+        Optional<ItemPedido> itemPedido = itemPedidoStream.findFirst();
+        if(itemPedido.isEmpty())
+            throw new NotFoundException(
+                    String.format("Produto '%s' não está presente no pedido", produto.getNome())
+            );
+
+        itemPedido.get().setQuantidade(quantidade);
     }
 }

@@ -31,26 +31,20 @@ public class ItemPedido {
     public ItemPedido(int quantidade, Produto produto, Pedido pedido) {
         Objects.requireNonNull(pedido, "Pedido é obrigatório");
         Objects.requireNonNull(produto, "Produto é obrigatório");
-        adicionarQuantidade(quantidade);
+        setQuantidade(quantidade);
     }
 
     ItemPedido(long id, int quantidade, Produto produto, Pedido pedido) {
         this.id = id;
         Objects.requireNonNull(pedido, "Pedido é obrigatório");
         Objects.requireNonNull(produto, "Produto é obrigatório");
-        adicionarQuantidade(quantidade);
+        setQuantidade(quantidade);
     }
 
-    void adicionarQuantidade(int quantidade) {
+    public void setQuantidade(int quantidade) {
         if(quantidade < 0)
-            throw new InvalidValueException("A quantidade a adicionar deve ser um número positivo");
+            throw new InvalidValueException("Quantidade deve ser um valor positivo");
 
-        this.quantidade += quantidade;
-    }
-    void removerQuantidade(int quantidade) {
-        if (quantidade < 0)
-            throw new InvalidValueException("A quantidade a remover deve ser um número positivo");
-
-        this.quantidade -= quantidade;
+        this.quantidade = quantidade;
     }
 }
