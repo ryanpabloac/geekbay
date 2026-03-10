@@ -1,14 +1,14 @@
 package com.geekbay.demo.controller.pedido;
 
+import com.geekbay.demo.dtos.pedido.AdicionarAoCarrinhoDTO;
 import com.geekbay.demo.dtos.pedido.CarrinhoResposeDTO;
 import com.geekbay.demo.services.CarrinhoService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.net.URI;
+
+@RestController
 @RequestMapping("api/carrinho")
 public class CarrinhoController {
     private final CarrinhoService carrinhoService;
@@ -22,5 +22,13 @@ public class CarrinhoController {
         CarrinhoResposeDTO carrinhoResposeDTO = carrinhoService.getCarrinho(userId);
 
         return ResponseEntity.ok(carrinhoResposeDTO);
+    }
+
+    @PostMapping
+    public ResponseEntity<CarrinhoResposeDTO> addNewItemToCart(@RequestBody AdicionarAoCarrinhoDTO body) {
+        CarrinhoResposeDTO dto = this.carrinhoService.adicionarAoCarinho(body);
+
+        URI uri = URI.create("api/carrinho/" + body.usuarioId());
+        return ResponseEntity.created(uri).build();
     }
 }

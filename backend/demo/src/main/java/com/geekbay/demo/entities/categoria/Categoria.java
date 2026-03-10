@@ -1,6 +1,7 @@
 package com.geekbay.demo.entities.categoria;
 
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.geekbay.demo.dtos.categoria.CategoriaRequestDTO;
 import com.geekbay.demo.entities.produto.Produto;
 import jakarta.persistence.*;
@@ -25,6 +26,7 @@ public class Categoria {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @JsonManagedReference("categoria-produtos")
     private List<Produto> produtosRegistrados = new ArrayList<>();
 
     public Categoria(){}

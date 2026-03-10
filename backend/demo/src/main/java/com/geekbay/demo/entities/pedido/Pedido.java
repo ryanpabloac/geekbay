@@ -1,5 +1,6 @@
 package com.geekbay.demo.entities.pedido;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.geekbay.demo.entities.Usuario;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.produto.Produto;
@@ -48,6 +49,7 @@ public class Pedido {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemPedido> itens;
 
@@ -124,5 +126,15 @@ public class Pedido {
             );
 
         itemPedido.get().setQuantidade(quantidade);
+    }
+
+    public BigDecimal calcularSubtotal() {
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for(ItemPedido i : itens) {
+            BigDecimal valor =  BigDecimal.valueOf(i.getProduto().getPreco() * i.getQuantidade());
+            subtotal = subtotal.add(valor);
+        }
+
+        return subtotal;
     }
 }
