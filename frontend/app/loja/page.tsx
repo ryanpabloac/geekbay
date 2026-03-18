@@ -197,7 +197,7 @@ export default function Loja() {
                                 style={
                                     categoriaSelecionada === "todas"
                                         ? { textAlign: "center", position: "relative" }
-                                        : { textAlign: "center", minWidth: "280px", flexShrink: 0, position:"relative" }
+                                        : { textAlign: "center", minWidth: "280px", flexShrink: 0, position: "relative" }
                                 }
                             >
                                 <div
@@ -208,17 +208,17 @@ export default function Loja() {
                                         cursor: "pointer",
                                         fontSize: "20px"
                                     }}
-                                     onClick={() => setProdutoInfo(p)}
-                                    >
+                                    onClick={() => setProdutoInfo(p)}
+                                >
                                     <img
                                         src="/info.png"
                                         alt="Informações"
                                         style={{
-                                                width: "22px",
-                                                height: "22px"
-                                                }}
+                                            width: "22px",
+                                            height: "22px"
+                                        }}
                                     />
-                                    </div>
+                                </div>
 
                                 <img src={p.img || '/icone-GB.png'} alt={p.nome} style={{ height: '130px', objectFit: 'contain', borderRadius: '8px' }} />
                                 <h3 style={{ marginTop: '15px', fontSize: '16px' }}>{p.nome}</h3>
@@ -271,35 +271,35 @@ export default function Loja() {
                 )}
             </div>
 
-                {produtoInfo && (
-  <div className={styles.modalOverlay}>
-    <div className={styles.modalConteudo} style={{ maxWidth: "500px" }}>
-      <h3 style={{ color: "#ff7a00" }}>{produtoInfo.nome}</h3>
+            {produtoInfo && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalConteudo} style={{ maxWidth: "500px" }}>
+                        <h3 style={{ color: "#ff7a00" }}>{produtoInfo.nome}</h3>
 
-      <img
-        src={produtoInfo.img}
-        alt={produtoInfo.nome}
-        style={{ width: "100%", height: "200px", objectFit: "contain" }}
-      />
+                        <img
+                            src={produtoInfo.img}
+                            alt={produtoInfo.nome}
+                            style={{ width: "100%", height: "200px", objectFit: "contain" }}
+                        />
 
-      <p style={{ marginTop: "15px" }}>
-        {produtoInfo.descricao}
-      </p>
+                        <p style={{ marginTop: "15px" }}>
+                            {produtoInfo.descricao}
+                        </p>
 
-      <p style={{ fontWeight: "bold", fontSize: "20px", color: "#ff7a00" }}>
-        R$ {produtoInfo.preco}
-      </p>
+                        <p style={{ fontWeight: "bold", fontSize: "20px", color: "#ff7a00" }}>
+                            R$ {produtoInfo.preco}
+                        </p>
 
-      <button
-        className={styles.btnAcao}
-        style={{ marginTop: "15px", width: "100%" }}
-        onClick={() => setProdutoInfo(null)}
-      >
-        Fechar
-      </button>
-    </div>
-  </div>
-)}
+                        <button
+                            className={styles.btnAcao}
+                            style={{ marginTop: "15px", width: "100%" }}
+                            onClick={() => setProdutoInfo(null)}
+                        >
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            )}
 
 
         </>

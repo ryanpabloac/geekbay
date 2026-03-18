@@ -46,6 +46,11 @@ export default function Login() {
     const [mensagemModal, setMensagemModal] = useState(''); 
     const router = useRouter(); 
        
+    const temOitoCaracteres = senha.length >= 8;
+    const temLetraMaiuscula = /[A-Z]/.test(senha);
+    const temNumero = /[0-9]/.test(senha);
+    const temSimbolo = /[!@#$%^&*(),.?":{}|<>]/.test(senha);
+
     useEffect(() => {
         document.body.style.backgroundImage = 'url("./bg-GeekBay.png")';
         document.body.style.backgroundSize = 'cover';
@@ -162,6 +167,21 @@ export default function Login() {
                             value={senha}
                             onChange={(e) => setSenha(e.target.value)}
                         />
+
+                        <div style={{ alignSelf: 'flex-start', marginBottom: '20px' }}>
+                            <p style={{ fontSize: '10px', color: temOitoCaracteres ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                {temOitoCaracteres ? '✓' : '○'} Mínimo de 8 caracteres
+                            </p>
+                            <p style={{ fontSize: '10px', color: temLetraMaiuscula ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                {temLetraMaiuscula ? '✓' : '○'} Pelo menos uma letra maiúscula
+                            </p>
+                            <p style={{ fontSize: '10px', color: temNumero ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                {temNumero ? '✓' : '○'} Pelo menos um número
+                            </p>
+                            <p style={{ fontSize: '10px', color: temSimbolo ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                {temSimbolo ? '✓' : '○'} Pelo menos um símbolo (!@#...)
+                            </p>
+                        </div>
 
                         <button className={styles.btnAcao} onClick={handleLogin}>
                             Entrar
