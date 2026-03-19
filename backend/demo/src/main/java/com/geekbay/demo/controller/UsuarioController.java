@@ -30,7 +30,6 @@ public class UsuarioController {
                         .email(dto.email())
                         .telefone(dto.telefone())
                         .perfil(Profile.CLIENTE)
-                        // por enquanto em texto (depois a gente coloca BCrypt)
                         .senha(dto.senha())
                         .build()
         );
