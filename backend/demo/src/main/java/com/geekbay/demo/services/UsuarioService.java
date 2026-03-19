@@ -5,6 +5,7 @@ import com.geekbay.demo.exceptions.AlreadyExistsException;
 import com.geekbay.demo.exceptions.NotFoundException;
 import com.geekbay.demo.repositories.UsuarioRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -14,6 +15,9 @@ import java.util.Optional;
 public class UsuarioService {
 
     private final UsuarioRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+
 
     public Usuario createUser(final Usuario usuario) {
         if (userRepository.existsByCpf(usuario.getCpf())) {
@@ -23,6 +27,8 @@ public class UsuarioService {
         if (userRepository.existsByEmail(usuario.getEmail())) {
             throw new AlreadyExistsException(String.format("E-mail %s já cadastrado.", usuario.getEmail()));
         }
+
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
 
         return userRepository.save(usuario);
     }
