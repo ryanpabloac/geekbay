@@ -118,6 +118,7 @@ export default function FinalizarCompra() {
         nome: item.nome,
         quantidade: item.quantidade || 1,
         preco_unitario: item.preco,
+        categoria: item.categoria,
       })),
     };
 
@@ -129,12 +130,33 @@ export default function FinalizarCompra() {
       });
 
       if (response.ok) {
+        const resEstoque = await fetch("http://localhost:5000/estoque");
+        const estoqueAtual = await resEstoque.json();
+
+        for (const item of novoPedido.itens) {
+          const registroEstoque = estoqueAtual.find(
+            (e: any) => String(e.produto_id) === String(item.produto_id),
+          );
+
+          if (registroEstoque) {
+            const novaQuantidade =
+              registroEstoque.quantidade_disponivel - item.quantidade;
+            await fetch(`http://localhost:5000/estoque/${registroEstoque.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                quantidade_disponivel: novaQuantidade >= 0 ? novaQuantidade : 0,
+              }),
+            });
+          }
+        }
+
         setItensCarrinho([]);
         localStorage.removeItem("geekbay_cart");
         setMostrarAgradecimento(true);
       }
     } catch (error) {
-      console.error("Erro ao salvar pedido:", error);
+      console.error("Erro ao processar compra:", error);
     }
   };
 

@@ -5,7 +5,7 @@
       "categoria": "bonecos",
       "codigo": "BON999",
       "nome": "Action Figure Goku Super Saiyajin",
-      "preco": "100",
+      "preco": "200",
       "descricao": "Figura articulada de 15cm com efeitos de aura em PET reciclado.",
       "img": "/goku.jpg"
     },
@@ -140,7 +140,7 @@
     {
       "id": 1,
       "produto_id": "5",
-      "quantidade_disponivel": 20,
+      "quantidade_disponivel": 19,
       "quantidade_reservada": 2
     },
     {
@@ -162,7 +162,7 @@
     {
       "id": 5,
       "produto_id": "c001",
-      "quantidade_disponivel": 12,
+      "quantidade_disponivel": 11,
       "quantidade_reservada": 3
     },
     {
@@ -180,7 +180,7 @@
     {
       "id": 8,
       "produto_id": "ct002",
-      "quantidade_disponivel": 30,
+      "quantidade_disponivel": 29,
       "quantidade_reservada": 4
     },
     {
@@ -204,7 +204,7 @@
     {
       "id": 12,
       "produto_id": "b001",
-      "quantidade_disponivel": 7,
+      "quantidade_disponivel": 6,
       "quantidade_reservada": 2
     },
     {
@@ -227,130 +227,94 @@
   ],
   "pedidos": [
     {
-      "id": 3,
-      "nome_cliente": "Peter Parker",
-      "status": "Pronto",
-      "valor_total": "89.90",
-      "categoria": "Canetas",
-      "data_pedido": "2026-02-22"
-    },
-    {
-      "id": 4,
-      "nome_cliente": "Bruce Wayne",
-      "status": "Pronto",
-      "valor_total": "1500.00",
-      "categoria": "Mochilas",
-      "data_pedido": "2026-02-22"
-    },
-    {
-      "id": 5,
-      "nome_cliente": "Diana Prince",
-      "status": "Pronto",
-      "valor_total": "210.00",
-      "categoria": "Agendas",
-      "data_pedido": "2026-02-23"
-    },
-    {
-      "id": 6,
-      "nome_cliente": "Tony Stark",
-      "status": "Pronto",
-      "valor_total": "450.25",
-      "categoria": "Bonecos",
-      "data_pedido": "2026-02-23"
-    },
-    {
+      "cliente_id": "7334",
       "nome_cliente": "Cadastro",
       "status": "Pronto",
-      "valor_total": "181.00",
-      "data_pedido": "2026-03-18",
-      "metodo_pagamento": "Pix",
-      "id": 7
+      "valor_total": "136.00",
+      "data_pedido": "2026-02-20",
+      "metodo_pagamento": "Cartao",
+      "itens": [
+        {
+          "produto_id": "6",
+          "nome": "Death Note Replica Agenda",
+          "quantidade": 2,
+          "preco_unitario": "55",
+          "categoria": "agendas"
+        }
+      ],
+      "id": 12
     },
     {
       "cliente_id": "7334",
       "nome_cliente": "Cadastro",
       "status": "Pendente",
-      "valor_total": "365.90",
-      "data_pedido": "2026-03-18",
+      "valor_total": "215.90",
+      "data_pedido": "2026-03-21",
+      "metodo_pagamento": "Pix",
+      "itens": [
+        {
+          "produto_id": "b001",
+          "nome": "Boneco Action Hero",
+          "quantidade": 1,
+          "preco_unitario": "189,90",
+          "categoria": "bonecos"
+        }
+      ],
+      "id": 13
+    },
+    {
+      "cliente_id": "7334",
+      "nome_cliente": "Cadastro",
+      "status": "Pendente",
+      "valor_total": "85.90",
+      "data_pedido": "2025-04-21",
+      "metodo_pagamento": "Cartao",
+      "itens": [
+        {
+          "produto_id": "c001",
+          "nome": "Caneca Hero Black",
+          "quantidade": 1,
+          "preco_unitario": "59,90",
+          "categoria": "canecas"
+        }
+      ],
+      "id": 14
+    },
+    {
+      "cliente_id": "7334",
+      "nome_cliente": "Cadastro",
+      "status": "Pendente",
+      "valor_total": "75.90",
+      "data_pedido": "2026-10-02",
+      "metodo_pagamento": "Cartao",
+      "itens": [
+        {
+          "produto_id": "ct002",
+          "nome": "Caneta Metal Premium",
+          "quantidade": 1,
+          "preco_unitario": "49,90",
+          "categoria": "canetas"
+        }
+      ],
+      "id": 15
+    },
+    {
+      "cliente_id": "7334",
+      "nome_cliente": "Cadastro",
+      "status": "Pendente",
+      "valor_total": "226.00",
+      "data_pedido": "2026-03-21",
       "metodo_pagamento": "Pix",
       "itens": [
         {
           "produto_id": "5",
           "nome": "Action Figure Goku Super Saiyajin",
           "quantidade": 1,
-          "preco_unitario": "100"
-        },
-        {
-          "produto_id": "a001",
-          "nome": "Agenda Gamer 2026",
-          "quantidade": 1,
-          "preco_unitario": "89,90"
-        },
-        {
-          "produto_id": "aabd",
-          "nome": "Caneca Batman",
-          "quantidade": 1,
-          "preco_unitario": "150,00"
+          "preco_unitario": "200",
+          "categoria": "bonecos"
         }
       ],
-      "id": 8
-    },
-    {
-      "cliente_id": "7334",
-      "nome_cliente": "Cadastro",
-      "status": "Pronto",
-      "valor_total": "185.80",
-      "data_pedido": "2026-03-18",
-      "metodo_pagamento": "Pix",
-      "itens": [
-        {
-          "produto_id": "a001",
-          "nome": "Agenda Gamer 2026",
-          "quantidade": 1,
-          "preco_unitario": "89,90"
-        },
-        {
-          "produto_id": "c002",
-          "nome": "Caneca Pixel Art",
-          "quantidade": 1,
-          "preco_unitario": "69,90"
-        }
-      ],
-      "id": 9
-    },
-    {
-      "cliente_id": "7334",
-      "nome_cliente": "Cadastro",
-      "status": "Pendente",
-      "valor_total": "81.00",
-      "data_pedido": "2026-03-18",
-      "metodo_pagamento": "Pix",
-      "itens": [
-        {
-          "produto_id": "6",
-          "nome": "Death Note Replica Agenda",
-          "quantidade": 1,
-          "preco_unitario": "55"
-        }
-      ],
-      "id": 10
-    },
-    {
-      "cliente_id": "7334",
-      "nome_cliente": "Cadastro",
-      "status": "Pendente",
-      "valor_total": "81.00",
-      "data_pedido": "2026-03-18",
-      "metodo_pagamento": "Pix",
-      "itens": [
-        {
-          "produto_id": "6",
-          "nome": "Death Note Replica Agenda",
-          "quantidade": 1,
-          "preco_unitario": "55"
-        }
-      ],
-      "id": 11
+      "id": 16
     }
   ],
   "clientes": [
