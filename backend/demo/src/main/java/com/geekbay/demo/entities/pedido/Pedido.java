@@ -5,10 +5,7 @@ import com.geekbay.demo.entities.Usuario;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.produto.Produto;
 import com.geekbay.demo.enums.OrderStatus;
-import com.geekbay.demo.exceptions.InvalidOrderDateException;
-import com.geekbay.demo.exceptions.InvalidValueException;
-import com.geekbay.demo.exceptions.NotFoundException;
-import com.geekbay.demo.exceptions.UnauthorizedOperationException;
+import com.geekbay.demo.exceptions.*;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -17,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -57,6 +55,7 @@ public class Pedido {
         Objects.requireNonNull(usuario, "Usuário é obrigatório");
         this.usuario = usuario;
         this.status = OrderStatus.CARRINHO;
+        this.itens = new ArrayList<>();
     }
 
     public void setDataPedido(LocalDateTime dataPedido) {
@@ -136,5 +135,12 @@ public class Pedido {
         }
 
         return subtotal;
+    }
+
+    public ItemPedido getItemPedidoById(Long itemPedidoId) {
+        return itens.stream()
+                .filter(i -> i.getId().equals(itemPedidoId))
+                .findFirst()
+                .orElseThrow(() -> new ProductUnavailableException("Item inexistente no pedido"));
     }
 }
