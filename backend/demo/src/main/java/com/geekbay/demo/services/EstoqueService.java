@@ -4,6 +4,8 @@ import com.geekbay.demo.dtos.estoque.EstoqueRequestDTO;
 import com.geekbay.demo.dtos.estoque.EstoqueResponseDTO;
 import com.geekbay.demo.entities.estoque.Estoque;
 import com.geekbay.demo.entities.produto.Produto;
+import com.geekbay.demo.exceptions.InsufficientStockException;
+import com.geekbay.demo.exceptions.NotFoundException;
 import com.geekbay.demo.repositories.EstoqueRepository;
 import com.geekbay.demo.repositories.ProdutoRepository;
 import org.springframework.stereotype.Service;
@@ -50,5 +52,14 @@ public class EstoqueService {
             this.estoqueRepository.save(estoqueASerBuscado);
         }
         else throw new RuntimeException("ID inválido ou produto inexistente");;
+    }
+
+    public void validateDisponibilidade(int produtoId, int quantidade) {
+        Estoque estoque = this.estoqueRepository.findByProdutoId(produtoId);
+
+        if(getEstoqueList().isEmpty())
+            throw new NotFoundException("Estoque não encontrado");
+        if(quantidade > estoque.getQuantidade())
+            throw new InsufficientStockException("Estoque insuficiente");
     }
 }

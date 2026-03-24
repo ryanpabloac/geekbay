@@ -1,5 +1,6 @@
 package com.geekbay.demo.entities.produto;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.geekbay.demo.dtos.categoria.CategoriaResponseDTO;
 import com.geekbay.demo.dtos.produto.ProdutoRequestDTO;
 import com.geekbay.demo.entities.categoria.Categoria;
@@ -29,6 +30,7 @@ public class Produto {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id")
+    @JsonBackReference("categoria-produtos")
     private Categoria categoria;
 
     @Column(name = "ativo")
