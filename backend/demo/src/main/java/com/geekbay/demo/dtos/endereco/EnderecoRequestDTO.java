@@ -6,7 +6,12 @@ import jakarta.validation.constraints.NotNull;
 public record EnderecoRequestDTO(
         @NotBlank
         String cep,
+
+        @NotBlank
+        String number,
+
+        String complement,
+
         @NotNull
-        Integer usuarioId
-) {
-}
+        Long usuarioId
+) {}
