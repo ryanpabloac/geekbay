@@ -9,9 +9,21 @@ public record EnderecoResponseDTO(
         String neighborhood,
         String street,
         String service,
-        Integer usuarioId
+        String number,
+        String complement,
+        Long usuarioId
 ) {
     public EnderecoResponseDTO(Endereco endereco){
-        this(endereco.getCep(), endereco.getState(), endereco.getCity(), endereco.getNeighborhood(), endereco.getStreet(), endereco.getService(), endereco.getUsuarioId());
+        this(
+                endereco.getCep(),
+                endereco.getState(),
+                endereco.getCity(),
+                endereco.getNeighborhood(),
+                endereco.getStreet(),
+                endereco.getService(),
+                endereco.getNumber(),
+                endereco.getComplement(),
+                endereco.getUsuario().getId()
+        );
     }
 }

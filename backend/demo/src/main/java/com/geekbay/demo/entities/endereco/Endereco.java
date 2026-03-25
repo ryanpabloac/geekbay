@@ -1,6 +1,7 @@
 package com.geekbay.demo.entities.endereco;
 
 import com.geekbay.demo.dtos.endereco.EnderecoRequestDTO;
+import com.geekbay.demo.entities.Usuario;
 import jakarta.persistence.*;
 
 @Entity(name = "endereco")
@@ -18,23 +19,34 @@ public class Endereco {
     private String neighborhood;
     private String street;
     private String service;
+    private String number;
+    private String complement;
 
-    @Column(nullable = false)
-    private Integer usuarioId;
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     public Endereco(){}
-    public Endereco(String cep, String state, String city, String neighborhood, String street, String service, Integer usuarioId){
+
+    public Endereco(String cep, String state, String city, String neighborhood,
+                    String street, String service, String number,
+                    String complement, Usuario usuario) {
         this.cep = cep;
         this.state = state;
         this.city = city;
         this.neighborhood = neighborhood;
         this.street = street;
         this.service = service;
-        this.usuarioId = usuarioId;
+        this.number = number;
+        this.complement = complement;
+        this.usuario = usuario;
     }
+
     public Endereco(EnderecoRequestDTO enderecoRequestDTO){
         this.cep = enderecoRequestDTO.cep();
-        this.usuarioId = enderecoRequestDTO.usuarioId();
+        this.number = enderecoRequestDTO.number();
+        this.complement = enderecoRequestDTO.complement();
+
     }
 
 
@@ -57,8 +69,18 @@ public class Endereco {
     public void setService(String service) {this.service = service;}
 
     public Integer getId() {return id;}
+
     public void setId(Integer id) {this.id = id;}
 
-    public Integer getUsuarioId() {return usuarioId;}
-    public void setUsuarioId(Integer usuarioId) {this.usuarioId = usuarioId;}
+    public String getNumber() {return number;}
+
+    public void setNumber(String number) {this.number = number;}
+
+    public String getComplement() {return complement;}
+
+    public void setComplement(String complement) {this.complement = complement;}
+
+    public Usuario getUsuario() {return usuario;}
+
+    public void setUsuario(Usuario usuario) {this.usuario = usuario;}
 }

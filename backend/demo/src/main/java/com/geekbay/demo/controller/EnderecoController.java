@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/endereco")
+@RequestMapping("/api/enderecos")
 public class EnderecoController {
     private final EnderecoService enderecoService;
 
@@ -20,13 +20,13 @@ public class EnderecoController {
         return ResponseEntity.ok(this.enderecoService.getEnderecoByCep(cep));
     }
 
-    @GetMapping("/usuarioId/{usuarioId}")
-    public ResponseEntity<EnderecoResponseDTO> getEnderecoByUsuarioId(@PathVariable Integer usuarioId){
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<EnderecoResponseDTO> getEnderecoByUsuarioId(@PathVariable Long usuarioId){
         return ResponseEntity.ok(this.enderecoService.getEnderecoByUsuarioId(usuarioId));
     }
 
     @PostMapping()
-    public ResponseEntity addNewEnderecoByCep(@RequestBody EnderecoRequestDTO enderecoRequestDTO){
+    public ResponseEntity<Void> addNewEnderecoByCep(@RequestBody EnderecoRequestDTO enderecoRequestDTO){
         this.enderecoService.addNewEnderecoByCep(enderecoRequestDTO);
         return ResponseEntity.ok().build();
     }
