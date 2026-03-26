@@ -1,12 +1,12 @@
 package com.geekbay.demo.controller.pedido;
 
-import com.geekbay.demo.dtos.pedido.ListarPedidosAnterioresRequestDTO;
+import com.geekbay.demo.dtos.pedido.CancelarPedidoDTO;
 import com.geekbay.demo.dtos.pedido.ListarPedidosAnterioresResponseDTO;
+import com.geekbay.demo.dtos.pedido.MudarStatusPedidoDTO;
+import com.geekbay.demo.dtos.pedido.PedidoResponseDTO;
 import com.geekbay.demo.services.PedidoService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -21,5 +21,15 @@ public class PedidoController {
     @GetMapping("{usuarioId}")
     public ListarPedidosAnterioresResponseDTO listLastOrders(@PathVariable Long usuarioId) {
         return pedidoService.listLastOrders(usuarioId);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<PedidoResponseDTO> cancelOrder(@RequestBody CancelarPedidoDTO body) {
+        return ResponseEntity.ok(pedidoService.cancelOrder(body));
+    }
+
+    @PatchMapping("/atualizar")
+    public void updateStatus(@RequestBody MudarStatusPedidoDTO body) {
+        pedidoService.changeOrderStatus(body);
     }
 }
