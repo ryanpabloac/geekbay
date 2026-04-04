@@ -51,6 +51,7 @@ const ModalAviso = ({
 export default function Produtos() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [estoque, setEstoque] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -66,38 +67,38 @@ export default function Produtos() {
     null,
   );
   const [formEstoque, setFormEstoque] = useState({
-    disponivel: 0,
-    reservado: 0,
-  });
-
-  const [formCadastrar, setFormCadastrar] = useState({
-    categoria: "",
-    codigo: "",
-    nome: "",
-    preco: "",
-    descricao: "",
-    img: "",
     quantidade: 0,
   });
 
+    // Cadastro de produto
+  const [formCadastrar, setFormCadastrar] = useState({
+    categoria: "",
+    nome: "",
+    preco: 0.0,
+    imagem: "",
+    quantidade: 0,
+  });
+
+    // Edição de produto
   const [formEditar, setFormEditar] = useState({
     id: "",
     categoria: "",
-    codigo: "",
     nome: "",
-    preco: "",
+    preco: 0.0,
     descricao: "",
-    img: "",
+    imagem: "",
     quantidade: 0,
   });
 
   useEffect(() => {
     listarTodos();
     listarEstoque();
+    listarCategorias();
     listarPedidos();
     listarClientes();
   }, []);
 
+    // Lista clientes - usuários dentro do Back
   const listarClientes = async () => {
     try {
       const response = await fetch("http://localhost:5000/clientes");
@@ -108,9 +109,10 @@ export default function Produtos() {
     }
   };
 
+    // Lista produtos
   const listarTodos = async () => {
     try {
-      const response = await fetch("http://localhost:5000/produtos");
+      const response = await fetch("http://localhost:8080/api/produto");
       if (!response.ok) throw new Error();
       const dados = await response.json();
       setProdutos(dados);
@@ -119,17 +121,31 @@ export default function Produtos() {
     }
   };
 
+    // Lista estoque
   const listarEstoque = async () => {
     try {
-      const response = await fetch("http://localhost:5000/estoque");
+      const response = await fetch("http://localhost:8080/api/estoque");
       if (!response.ok) throw new Error();
       const dados = await response.json();
-      setEstoque(dados);
+      setEstoque(dados.map(mapEstoque));
     } catch (error) {
       console.error("Erro ao carregar estoque.");
     }
   };
 
+    // Lista categorias
+  const listarCategorias = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/categoria");
+      if (!response.ok) throw new Error();
+      const dados = await response.json();
+      setCategorias(dados);
+    } catch (error) {
+      setMensagemModal("Erro ao carregar categorias.");
+    }
+  };
+
+    // Lista pedidos
   const listarPedidos = async () => {
     try {
       const response = await fetch("http://localhost:5000/pedidos");
@@ -141,6 +157,7 @@ export default function Produtos() {
     }
   };
 
+    // Exclui pedido
   const prepararExclusaoPedido = (id: number) => {
     setPedidoParaExcluir(id);
     setMensagemModal(
@@ -171,32 +188,41 @@ export default function Produtos() {
     }
   };
 
+    // Cadastrar produto
   const handleCadastrar = async (e: any) => {
     e.preventDefault();
     try {
-      const responseProduto = await fetch("http://localhost:5000/produtos", {
+        // Busca categoria pelo nome dado no form e cria produto com categoria.id
+      const responseCategoria = (await fetch(`http://localhost:8080/api/categoria/nome/${formCadastrar.categoria}`));
+      if(!responseCategoria.ok) throw new Error("Categoria não encontrada.");
+      const categoria = await responseCategoria.json();
+
+      //const responseProduto = await fetch("http://localhost:5000/produtos", {
+      const responseProduto = await fetch("http://localhost:8080/api/produto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          categoria: formCadastrar.categoria,
-          codigo: formCadastrar.codigo,
+          categoria_id: categoria.id,
           nome: formCadastrar.nome,
           preco: formCadastrar.preco,
-          descricao: formCadastrar.descricao,
-          img: formCadastrar.img,
+          imagem: formCadastrar.imagem || ""
         }),
       });
+      if (!responseProduto.ok) throw new Error("Erro no cadastro do produto");
 
-      if (!responseProduto.ok) throw new Error();
-      const novoProduto = await responseProduto.json();
+        // Depois preciso otimizar isso aqui
+      const responseProdutoCadastrado = await fetch(`http://localhost:8080/api/produto/nome/${formCadastrar.nome}`);
+      if(!responseProdutoCadastrado.ok) throw new Error("Erro na busca do produto cadastrado");
+      const idProduto = await responseProdutoCadastrado.json();
 
       const novoEstoque = {
-        produto_id: novoProduto.id,
-        quantidade_disponivel: formCadastrar.quantidade,
-        quantidade_reservada: 0,
+        produto_id: idProduto.id,
+        quantidade: formCadastrar.quantidade,
       };
 
-      await fetch("http://localhost:5000/estoque", {
+
+        // Aqui é onde o estoque é cadastrado com o produto criado
+      await fetch("http://localhost:8080/api/estoque", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(novoEstoque),
@@ -205,62 +231,90 @@ export default function Produtos() {
       setMensagemModal("Produto e estoque cadastrados com sucesso!");
       setFormCadastrar({
         categoria: "",
-        codigo: "",
         nome: "",
-        preco: "",
-        descricao: "",
-        img: "",
+        preco: 0.0,
+        imagem: "",
         quantidade: 0,
       });
       listarTodos();
       listarEstoque();
     } catch (error) {
+      console.error(error);
       setMensagemModal("Erro ao cadastrar produto ou estoque.");
     }
   };
 
   const prepararEdicao = (produto: any) => {
+    console.log("Produto recebido:", produto);
     const itemEstoque = estoque.find(
       (e) => String(e.produto_id) === String(produto.id),
-    );
+    );  // Busca dentro do estoque o item com produto_id correspondente
+    console.log("Item estoque encontrado:", itemEstoque);
+    
     setFormEditar({
-      ...produto,
-      quantidade: itemEstoque ? itemEstoque.quantidade_disponivel : 0,
+      id: produto.id,
+      categoria: produto.categoriaResponseDTO?.nome || produto.categoria || "",
+      nome: produto.nome || "",
+      preco: produto.preco || 0.0,
+      descricao: produto.descricao || "",
+      imagem: produto.imagem || produto.img || "",
+      quantidade: itemEstoque ? itemEstoque.quantidade : 0,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+    // Salvar atualização do produto
   const handleSalvarEdicao = async (e: any) => {
     e.preventDefault();
     try {
-      const response = await fetch(
-        `http://localhost:5000/produtos/${formEditar.id}`,
+
+        // Atualiza a categoria para atualizar o produto com base no categoria.id
+      const updateCategoriaResponse = await fetch(
+        `http://localhost:8080/api/categoria/nome/${formEditar.categoria}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            id: formEditar.id,
-            categoria: formEditar.categoria,
-            codigo: formEditar.codigo,
+            nome: formEditar.categoria
+          })
+        }
+      );
+      if(!updateCategoriaResponse.ok) throw new Error("Erro ao atualizar categoria.");
+
+      const categoriaAtualizada = await fetch(
+        `http://localhost:8080/api/categoria/nome/${formEditar.categoria}`
+      );
+      if (!categoriaAtualizada.ok) throw new Error("Categoria não encontrada.");
+      const categoriaAtualizadaResponse = await categoriaAtualizada.json();
+
+      const response = await fetch(
+        `http://localhost:8080/api/produto/${formEditar.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            categoria_id: categoriaAtualizadaResponse.id,
             nome: formEditar.nome,
             preco: formEditar.preco,
             descricao: formEditar.descricao,
-            img: formEditar.img,
+            imagem: formEditar.imagem,
           }),
         },
       );
       if (!response.ok) throw new Error();
 
+        // Verificar se esse ID está chegando
+          // pois não é pra ter produto.id no forms
       const itemEstoque = estoque.find(
         (est) => String(est.produto_id) === String(formEditar.id),
       );
 
       if (itemEstoque) {
-        await fetch(`http://localhost:5000/estoque/${itemEstoque.id}`, {
-          method: "PATCH",
+        await fetch(`http://localhost:8080/api/estoque/${itemEstoque.id}`, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            quantidade_disponivel: Number(formEditar.quantidade),
+            quantidade: Number(formEditar.quantidade),
           }),
         });
       }
@@ -269,15 +323,15 @@ export default function Produtos() {
       setFormEditar({
         id: "",
         categoria: "",
-        codigo: "",
         nome: "",
-        preco: "",
+        preco: 0.0,
         descricao: "",
-        img: "",
+        imagem: "",
         quantidade: 0,
       });
       listarTodos();
     } catch (error) {
+      console.error(error)
       setMensagemModal("Erro ao atualizar produto.");
     }
   };
@@ -290,7 +344,7 @@ export default function Produtos() {
   const confirmarExclusao = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/produtos/${idParaExcluir}`,
+        `http://localhost:8080/api/produto/${idParaExcluir}`,
         { method: "DELETE" },
       );
       if (!response.ok) throw new Error();
@@ -303,22 +357,23 @@ export default function Produtos() {
     }
   };
 
+    // Edição do estoque dos produtos 
+      // Melhor editar só quantidade né (?)
   const iniciarEdicaoEstoque = (item: any) => {
     setEditandoEstoqueId(item.id);
     setFormEstoque({
-      disponivel: item.quantidade_disponivel,
-      reservado: item.quantidade_reservada,
+      quantidade: item.quantidade,
     });
   };
 
+    // Salvar estoque atualizado
   const salvarEstoque = async (id: number) => {
     try {
-      await fetch(`http://localhost:5000/estoque/${id}`, {
-        method: "PATCH",
+      await fetch(`http://localhost:8080/api/estoque/produto/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          quantidade_disponivel: formEstoque.disponivel,
-          quantidade_reservada: formEstoque.reservado,
+          quantidade: formEstoque.quantidade,
         }),
       });
 
@@ -330,6 +385,7 @@ export default function Produtos() {
     }
   };
 
+    // Atualizar status do pedido
   const atualizarStatusPedido = async (id: number, status: string) => {
     try {
       await fetch(`http://localhost:5000/pedidos/${id}`, {
@@ -352,13 +408,19 @@ export default function Produtos() {
     }
   };
 
-  const buscarNomeProduto = (produtoId: any) => {
-    if (!produtos || produtos.length === 0) return "Carregando...";
-    const produto = produtos.find(
-      (p: any) => String(p.id) === String(produtoId),
-    );
-    return produto ? produto.nome : "Produto não encontrado";
-  };
+    // Mapear itens do estoque 
+  function mapEstoque(e: any) {
+    return {
+      id: e.id,
+      quantidade: e.quantidade,
+      produto_id: e.produtoResponseDTO.id,
+      produto: e.produtoResponseDTO.nome,
+      preco: e.produtoResponseDTO.preco,
+      imagem: e.produtoResponseDTO.imagem,
+      categoria: e.produtoResponseDTO.categoriaResponseDTO.nome
+    };
+  }
+  
 
   return (
     <div
@@ -409,7 +471,7 @@ export default function Produtos() {
           <section className={styles.card}>
             <div className={styles.cardTituloImg}>
               <img
-                src={formCadastrar.img || "/icone-GB.png"}
+                src={formCadastrar.imagem || "/icone-GB.png"}
                 alt="Preview"
                 className={styles.logoCard}
                 style={{ objectFit: "contain", borderRadius: "8px" }}
@@ -421,9 +483,9 @@ export default function Produtos() {
                 className={styles.inputGroup}
                 type="text"
                 placeholder="URL da Imagem"
-                value={formCadastrar.img}
+                value={formCadastrar.imagem}
                 onChange={(e) =>
-                  setFormCadastrar({ ...formCadastrar, img: e.target.value })
+                  setFormCadastrar({ ...formCadastrar, imagem: e.target.value })
                 }
               />
               <input
@@ -442,7 +504,7 @@ export default function Produtos() {
               <input
                 className={styles.inputGroup}
                 type="number"
-                placeholder="Qtd Inicial"
+                placeholder="Quantidade Disponível"
                 value={formCadastrar.quantidade}
                 onChange={(e) =>
                   setFormCadastrar({
@@ -450,16 +512,6 @@ export default function Produtos() {
                     quantidade: Number(e.target.value),
                   })
                 }
-              />
-              <input
-                className={styles.inputGroup}
-                type="text"
-                placeholder="Código"
-                value={formCadastrar.codigo}
-                onChange={(e) =>
-                  setFormCadastrar({ ...formCadastrar, codigo: e.target.value })
-                }
-                required
               />
               <input
                 className={styles.inputGroup}
@@ -477,7 +529,10 @@ export default function Produtos() {
                 placeholder="R$ 123,45"
                 value={formCadastrar.preco}
                 onChange={(e) =>
-                  setFormCadastrar({ ...formCadastrar, preco: e.target.value })
+                  setFormCadastrar({ 
+                    ...formCadastrar, 
+                    preco: Number(e.target.value)
+                  })
                 }
                 required
               />
@@ -493,9 +548,9 @@ export default function Produtos() {
               className={styles.cardTituloImg}
               style={{ marginBottom: "25px" }}
             >
-              {formEditar.img ? (
+              {formEditar.imagem ? (
                 <img
-                  src={formEditar.img}
+                  src={formEditar.imagem}
                   alt="Foto do Produto"
                   className={styles.imgCardEditar}
                 />
@@ -514,9 +569,9 @@ export default function Produtos() {
                 className={styles.inputGroup}
                 type="text"
                 placeholder="URL da Imagem"
-                value={formEditar.img}
+                value={formEditar.imagem}
                 onChange={(e) =>
-                  setFormEditar({ ...formEditar, img: e.target.value })
+                  setFormEditar({ ...formEditar, imagem: e.target.value })
                 }
               />
               <input
@@ -526,17 +581,6 @@ export default function Produtos() {
                 value={formEditar.categoria}
                 onChange={(e) =>
                   setFormEditar({ ...formEditar, categoria: e.target.value })
-                }
-                required
-              />
-
-              <input
-                className={styles.inputGroup}
-                type="text"
-                placeholder="Código"
-                value={formEditar.codigo}
-                onChange={(e) =>
-                  setFormEditar({ ...formEditar, codigo: e.target.value })
                 }
                 required
               />
@@ -556,7 +600,9 @@ export default function Produtos() {
                 placeholder="R$ 123,45"
                 value={formEditar.preco}
                 onChange={(e) =>
-                  setFormEditar({ ...formEditar, preco: e.target.value })
+                  setFormEditar({ 
+                    ...formEditar, 
+                    preco: Number(e.target.value) })
                 }
                 required
               />
@@ -590,9 +636,9 @@ export default function Produtos() {
               {produtos.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    {p.img ? (
+                    {p.imagem ? (
                       <a
-                        href={p.img}
+                        href={p.imagem}
                         target="_blank"
                         rel="noreferrer"
                         style={{ fontSize: "10px", color: "#FF7A00" }}
@@ -645,8 +691,8 @@ export default function Produtos() {
             <thead>
               <tr>
                 <th>Produto</th>
-                <th>Disponível</th>
-                <th>Reservado</th>
+                <th>Quantidade</th>
+                <th>Categoria</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -654,7 +700,7 @@ export default function Produtos() {
               {estoque.map((e) => (
                 <tr key={e.id}>
                   <td style={{ fontWeight: "bold" }}>
-                    {buscarNomeProduto(e.produto_id)}
+                    {e.produto ?? "Produto não encontrado"}
                     <span
                       style={{
                         fontSize: "10px",
@@ -663,7 +709,7 @@ export default function Produtos() {
                         fontWeight: "normal",
                       }}
                     >
-                      ({e.produto_id})
+                      ({e.produto})
                     </span>
                   </td>
                   <td>
@@ -672,11 +718,11 @@ export default function Produtos() {
                         type="number"
                         className={styles.inputGroup}
                         style={{ width: "80px", margin: 0 }}
-                        value={formEstoque.disponivel}
+                        value={e.quantidade}
                         onChange={(ev) =>
                           setFormEstoque({
                             ...formEstoque,
-                            disponivel: parseInt(ev.target.value),
+                            quantidade: parseInt(ev.target.value),
                           })
                         }
                       />
@@ -684,30 +730,15 @@ export default function Produtos() {
                       <span
                         style={{
                           color:
-                            e.quantidade_disponivel < 3 ? "red" : "inherit",
+                            e.quantidade < 3 ? "red" : "inherit",
                         }}
                       >
-                        {e.quantidade_disponivel}
+                        {e.quantidade}
                       </span>
                     )}
                   </td>
                   <td>
-                    {editandoEstoqueId === e.id ? (
-                      <input
-                        type="number"
-                        className={styles.inputGroup}
-                        style={{ width: "80px", margin: 0 }}
-                        value={formEstoque.reservado}
-                        onChange={(ev) =>
-                          setFormEstoque({
-                            ...formEstoque,
-                            reservado: parseInt(ev.target.value),
-                          })
-                        }
-                      />
-                    ) : (
-                      e.quantidade_reservada
-                    )}
+                    {e.categoria ?? "Sem categoria"}
                   </td>
                   <td
                     style={{
@@ -744,12 +775,51 @@ export default function Produtos() {
                         className={styles.btnAcao}
                         style={{ width: "80px", padding: "5px 10px" }}
                       >
-                        Alterar Qtd
+                        Alterar Quantidade
                       </button>
                     )}
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </section>
+
+        <section
+          id="secao-categorias"
+          className={`${styles.card} ${styles.secaoListaCard}`}
+          style={{ marginTop: "30px" }}
+        >
+          <div className={styles.cardTituloImg}>
+            <img
+              src="/icone-GB.png"
+              alt="Categorias"
+              className={styles.logoCard}
+            />
+            <h2 style={{ color: "#000000" }}>Gerenciar Categorias</h2>
+          </div>
+          <table className={styles.tabelaContainer}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Categoria</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categorias.length > 0 ? (
+                categorias.map((categoria) => (
+                  <tr key={categoria.id}>
+                    <td>#{categoria.id}</td>
+                    <td>{categoria.nome}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={2} style={{ textAlign: "center", color: "#757575" }}>
+                    Nenhuma categoria encontrada.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </section>
