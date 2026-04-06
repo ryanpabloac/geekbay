@@ -52,16 +52,15 @@ public class CategoriaService {
 
     public void updateCategoriaById(Integer id, CategoriaRequestDTO categoriaRequestDTO){
 
-        Categoria categoriaUpdate = new Categoria(categoriaRequestDTO);
-        categoriaUpdate.setId(id);
-
         // Falta adicionar um try-catch pra pegar o use-case onde o id é inválido
         Categoria categoriaASerAtualizada = this.categoriaRepository.findById(id).get();
 
-        if(categoriaRequestDTO.nome() == null) categoriaUpdate.setNome(categoriaASerAtualizada.getNome());
-        if(categoriaRequestDTO.descricao() == null) categoriaUpdate.setDescricao(categoriaASerAtualizada.getDescricao());
+        if(categoriaRequestDTO.nome() !cl= null) categoriaASerAtualizada.setNome(categoriaRequestDTO.nome());
+        if(categoriaRequestDTO.descricao() != null) categoriaASerAtualizada.setDescricao(categoriaRequestDTO.descricao());
 
-        this.categoriaRepository.save(categoriaUpdate);
+        
+            // E se eu apagar isso aqui, pois não precisa de salvar no banco, né?
+        this.categoriaRepository.save(categoriaASerAtualizada);
     }
 
     // Usar findByNome ou a gambiarra que fiz pra filtrar?
