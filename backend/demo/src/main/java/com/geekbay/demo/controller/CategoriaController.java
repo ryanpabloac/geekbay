@@ -27,47 +27,76 @@ public class CategoriaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CategoriaResponseDTO> getCategoriaById(@PathVariable Integer id){
-        return ResponseEntity.ok(this.categoriaService.getCategoriaById(id));
+        try{
+            return ResponseEntity.ok(this.categoriaService.getCategoriaById(id));
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/nome/{nome}")
     public ResponseEntity<CategoriaResponseDTO> getCategoriaByNome(@PathVariable String nome){
-        return ResponseEntity.ok(this.categoriaService.getCategoriaByNome(nome));
+        try{
+            return ResponseEntity.ok(this.categoriaService.getCategoriaByNome(nome));
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // POST
 
     @PostMapping()
     public ResponseEntity addNewCategoria(@RequestBody CategoriaRequestDTO categoriaRequestDTO){
-        this.categoriaService.addNewCategoria(categoriaRequestDTO);
-        return ResponseEntity.ok().build();
+        try{
+            this.categoriaService.addNewCategoria(categoriaRequestDTO);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
+
     }
 
     // PUT
 
     @PutMapping("/{id}")
     public ResponseEntity updateCategoriaById(@PathVariable Integer id, @RequestBody CategoriaRequestDTO categoriaRequestDTO){
-        this.categoriaService.updateCategoriaById(id, categoriaRequestDTO);
-        return ResponseEntity.ok().build();
+        try{
+            this.categoriaService.updateCategoriaById(id, categoriaRequestDTO);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/nome/{nome}")
     public ResponseEntity updateCategoriaByNome(@PathVariable String nome, @RequestBody CategoriaRequestDTO categoriaRequestDTO){
-        this.categoriaService.updateCategoriaByNome(nome, categoriaRequestDTO);
-        return ResponseEntity.ok().build();
+        try{
+            this.categoriaService.updateCategoriaByNome(nome, categoriaRequestDTO);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // DELETE
 
     @DeleteMapping("/{id}")
     public ResponseEntity deleteCategoriaById(@PathVariable Integer id){
-        this.categoriaService.deleteCategoriaById(id);
-        return ResponseEntity.ok().build();
+        try{
+            this.categoriaService.deleteCategoriaById(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @DeleteMapping("/nome/{nome}")
     public ResponseEntity deleteCategoriaByNome(@PathVariable String nome){
-        this.categoriaService.deleteCategoriaByNome(nome);
-        return ResponseEntity.ok().build();
+        try{
+            this.categoriaService.deleteCategoriaByNome(nome);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
