@@ -2,12 +2,16 @@ package com.geekbay.demo.services;
 
 import com.geekbay.demo.dtos.produto.ProdutoRequestDTO;
 import com.geekbay.demo.dtos.produto.ProdutoResponseDTO;
+import com.geekbay.demo.dtos.produto.ProdutoUpdateRequestDTO;
 import com.geekbay.demo.entities.categoria.Categoria;
 import com.geekbay.demo.entities.produto.Produto;
 import com.geekbay.demo.repositories.CategoriaRepository;
 import com.geekbay.demo.repositories.ProdutoRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,47 +30,28 @@ public class ProdutoService {
 
     public List<ProdutoResponseDTO> getProdutoList(){
         return this.produtoRepository
-                .findAll()
+                .findAll(Sort.by("id").ascending())
                 .stream()
                 .map(p -> new ProdutoResponseDTO(p))
                 .toList();
     }
 
-    public ProdutoResponseDTO getProdutoById(int id){
-        if(this.produtoRepository.existsById(id)){
-            return this.produtoRepository
-                    .findById(id)
-                    .map(produto -> new ProdutoResponseDTO(produto))
-                    .get();
-        }
-        throw new RuntimeException("ID inválido ou produto inexistente");
+    public ProdutoResponseDTO getProdutoById(Integer id){
+        Optional<Produto> produtoQuery = this.produtoRepository.findById(id);
+        if(produtoQuery.isEmpty()) throw new RuntimeException("ID inválido ou produto inexistente");
+        return produtoQuery.map(produto -> new ProdutoResponseDTO(produto)).get();
     }
 
     public ProdutoResponseDTO getProdutoByNome(String nome){
         Optional<Produto> produtoBuscado = filtraProdutoExistentePorNome(nome);
-        if(produtoBuscado.isPresent()) return new ProdutoResponseDTO(produtoBuscado.get());
-        else throw new RuntimeException("Nome inválido ou produto inexistente");
-        /*ProdutoResponseDTO produtoBuscado = this.produtoRepository
-                .findAll()
-                .stream()
-                .filter(produto -> produto.getNome().equalsIgnoreCase(nome))
-                .findFirst()
-                .map(produto -> new ProdutoResponseDTO(produto))
-                .get();
-        if(this.produtoRepository.existsById(produtoBuscado.id())){
-            return produtoBuscado;
-        }
-        throw new RuntimeException("Nome inválido ou produto inexistente"); // Não funciona -> Verificar */
+        if(produtoBuscado.isEmpty()) throw new RuntimeException("Nome inválido ou produto inexistente");
+        return new ProdutoResponseDTO(produtoBuscado.get());
     }
 
-    public List<ProdutoResponseDTO> getProdutoListByCategoria(int categoria_id){
-        return this.produtoRepository.findByCategoriaId(categoria_id).stream().map(produto -> new ProdutoResponseDTO(produto)).toList();
-        /*return this.produtoRepository
-                .findAll()
-                .stream()
-                //.filter(produto -> produto.getCategoria_id() == categoria_id)
-                .map(produto -> new ProdutoResponseDTO(produto))
-                .toList();*/
+    public List<ProdutoResponseDTO> getProdutoListByCategoria(Integer categoria_id){
+        List<Produto> produtoList = this.produtoRepository.findByCategoriaId(categoria_id, Sort.by("id").ascending());
+        if(produtoList.isEmpty()) throw new RuntimeException("ID inválido ou categoria inexistente");
+        return produtoList.stream().map(produto -> new ProdutoResponseDTO(produto)).toList();
     }
 
 
@@ -74,71 +59,41 @@ public class ProdutoService {
 
     // Colocar ativo=true por default
     public void addNewProduto(ProdutoRequestDTO produtoRequestDTO){
-        Categoria categoriaAdd = this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get();
-        Produto produtoAdd = new Produto();
-        produtoAdd.setNome(produtoRequestDTO.nome());
-        produtoAdd.setDescricao(produtoRequestDTO.descricao());
-        produtoAdd.setPreco(produtoRequestDTO.preco());
-        produtoAdd.setAtivo(produtoRequestDTO.ativo());
-        produtoAdd.setImagem(produtoRequestDTO.imagem());
-        produtoAdd.setCategoria(categoriaAdd);
+        Optional<Categoria> categoriaAdd = this.categoriaRepository.findById(produtoRequestDTO.categoria_id());
+        if(categoriaAdd.isEmpty()) throw new RuntimeException("ID da categoria inválido");
+        Produto produtoAdd = new Produto(produtoRequestDTO);
+        produtoAdd.setCategoria(categoriaAdd.get());
         this.produtoRepository.save(produtoAdd);
-        //if(this.produtoRepository.findById(produtoRequestDTO.categoria_id()).isPresent()) this.produtoRepository.save(new Produto(produtoRequestDTO));
-        //else throw new RuntimeException("ID inválido ou categoria inexistente");
     }
 
 
     // PUT
 
-    public void updateProdutoById(int id, ProdutoRequestDTO produtoRequestDTO){
-        try{
-            if(this.produtoRepository.findById(id).isPresent()){
-                Produto produtoUpdate = new Produto(produtoRequestDTO);
-                produtoUpdate.setId(id);
+    @Transactional
+    public void updateProdutoById(Integer id, ProdutoUpdateRequestDTO produtoRequestDTO){
+        Optional<Produto> produtoQuery = this.produtoRepository.findById(id);
+        if(produtoQuery.isEmpty()) throw new RuntimeException("ID inválido ou produto inexistente");
+        if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
+        if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
+        if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
+        if(produtoRequestDTO.imagem() != null) produtoQuery.get().setImagem(produtoRequestDTO.imagem());
+        if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
+                .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());
+        if(produtoRequestDTO.ativo() != null) produtoQuery.get().setAtivo(produtoRequestDTO.ativo()); // Isso aqui tava dando erro, Boolean pode ser null, já boolean não pode -> Causa NullPointerException no processo de autounboxing
 
-                Produto produtoASerAtualizado = this.produtoRepository.findById(id).get();
-
-                if(produtoUpdate.getNome() == null) produtoUpdate.setNome(produtoASerAtualizado.getNome());
-                if(produtoUpdate.getDescricao() == null) produtoUpdate.setDescricao(produtoASerAtualizado.getDescricao());
-                if(produtoUpdate.getPreco() == null) produtoUpdate.setPreco(produtoASerAtualizado.getPreco());
-                if(produtoUpdate.getImagem() == null) produtoUpdate.setImagem(produtoASerAtualizado.getImagem());
-                if(produtoUpdate.getCategoria() == null) produtoUpdate.setCategoria(produtoASerAtualizado.getCategoria());
-                //if(produtoUpdate.getCategoria_id() == null) produtoUpdate.setCategoria_id(produtoASerAtualizado.getCategoria_id());
-                if(produtoUpdate.isAtivo() == null) produtoUpdate.setAtivo(produtoASerAtualizado.isAtivo());
-
-                this.produtoRepository.save(produtoUpdate);
-            }
-            else
-                throw new RuntimeException("ID inválido ou produto inexistente");
-        }
-        catch (RuntimeException idInvalido){}
     }
 
-
-    public void updateProdutoByNome(String nome, ProdutoRequestDTO produtoRequestDTO){
-        try{
-            if(filtraProdutoExistentePorNome(nome).isPresent()){
-                Produto produtoUpdate = new Produto(produtoRequestDTO);
-
-                Produto produtoASerAtualizado = filtraProdutoExistentePorNome(nome).get();
-
-                produtoUpdate.setId(produtoASerAtualizado.getId());
-
-                if(produtoUpdate.getNome() == null) produtoUpdate.setNome(produtoASerAtualizado.getNome());
-                if(produtoUpdate.getDescricao() == null) produtoUpdate.setDescricao(produtoASerAtualizado.getDescricao());
-                if(produtoUpdate.getPreco() == null) produtoUpdate.setPreco(produtoASerAtualizado.getPreco());
-                if(produtoUpdate.getImagem() == null) produtoUpdate.setImagem(produtoASerAtualizado.getImagem());
-                if(produtoUpdate.getCategoria() == null) produtoUpdate.setCategoria(produtoASerAtualizado.getCategoria());
-                //if(produtoUpdate.getCategoria_id() == null) produtoUpdate.setCategoria_id(produtoASerAtualizado.getCategoria_id());
-                if(produtoUpdate.isAtivo() == null) produtoUpdate.setAtivo(produtoASerAtualizado.isAtivo());
-
-                this.produtoRepository.save(produtoUpdate);
-            }
-            else {
-                throw new RuntimeException("ID inválido ou produto inexistente");
-            }
-        }
-        catch (RuntimeException idInvalido){}
+    @Transactional
+    public void updateProdutoByNome(String nome, ProdutoUpdateRequestDTO produtoRequestDTO){
+        Optional<Produto> produtoQuery = filtraProdutoExistentePorNome(nome);
+        if(produtoQuery.isEmpty()) throw new RuntimeException("ID inválido ou produto inexistente");
+        if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
+        if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
+        if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
+        if(produtoRequestDTO.imagem() != null) produtoQuery.get().setImagem(produtoRequestDTO.imagem());
+        if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
+                .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());
+        if(produtoRequestDTO.ativo() != null) produtoQuery.get().setAtivo(produtoRequestDTO.ativo()); // Isso aqui tava dando erro, Boolean pode ser null, já boolean não pode -> Causa NullPointerException no processo de autounboxing
     }
 
     // DELETE
@@ -149,13 +104,9 @@ public class ProdutoService {
     }
 
     public void deleteProdutoByNome(String nome){
-
         Optional<Produto> produtoDelete = filtraProdutoExistentePorNome(nome);
-        if(produtoDelete.isPresent()){
-            this.produtoRepository.delete(produtoDelete.get());
-        }
-        else throw new RuntimeException("Nome inválido ou produto inexistente");
-
+        if(produtoDelete.isEmpty()) throw new RuntimeException("Nome inválido ou produto inexistente");
+        this.produtoRepository.delete(produtoDelete.get());
     }
 
 

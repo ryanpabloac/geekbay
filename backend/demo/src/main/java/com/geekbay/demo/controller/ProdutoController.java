@@ -3,6 +3,7 @@ package com.geekbay.demo.controller;
 
 import com.geekbay.demo.dtos.produto.ProdutoRequestDTO;
 import com.geekbay.demo.dtos.produto.ProdutoResponseDTO;
+import com.geekbay.demo.dtos.produto.ProdutoUpdateRequestDTO;
 import com.geekbay.demo.services.ProdutoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +19,6 @@ public class ProdutoController {
         this.produtoService = produtoService;
     }
 
-    // Criar BAD REQUEST BODY nos GET que retornam entidades
-    // Consertar updateProdutoById -> sempre retorna 200 mesmo com ID inválido
-    // Consertar updateProdutoByNome -> sempre retorna 200 mesmo com ID inválido
-    // Consertar deleteProdutoById -> sempre retorna 200 mesmo com ID inválido
 
 
     // GET
@@ -32,18 +29,30 @@ public class ProdutoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProdutoResponseDTO> getProdutoById(@PathVariable int id){
-        return ResponseEntity.ok(this.produtoService.getProdutoById(id));
+    public ResponseEntity<ProdutoResponseDTO> getProdutoById(@PathVariable Integer id){
+        try{
+            return ResponseEntity.ok(this.produtoService.getProdutoById(id));
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/nome/{nome}")
     public ResponseEntity<ProdutoResponseDTO> getProdutoByNome(@PathVariable String nome){
-        return ResponseEntity.ok(this.produtoService.getProdutoByNome(nome));
+        try{
+            return ResponseEntity.ok(this.produtoService.getProdutoByNome(nome));
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/categoria/{categoria_id}")
     public ResponseEntity<List<ProdutoResponseDTO>> getProdutoListByCategoria(@PathVariable Integer categoria_id){
-        return ResponseEntity.ok(this.produtoService.getProdutoListByCategoria(categoria_id));
+        try{
+            return ResponseEntity.ok(this.produtoService.getProdutoListByCategoria(categoria_id));
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
 
@@ -51,30 +60,34 @@ public class ProdutoController {
 
     @PostMapping()
     public ResponseEntity addNewProduto(@RequestBody ProdutoRequestDTO produtoRequestDTO){
-        this.produtoService.addNewProduto(produtoRequestDTO);
-        return ResponseEntity.ok().build();
+        try{
+            this.produtoService.addNewProduto(produtoRequestDTO);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
     }
 
 
     // PUT
     @PutMapping("/{id}")
-    public ResponseEntity updateProdutoById(@PathVariable int id, @RequestBody ProdutoRequestDTO produtoRequestDTO){
+    public ResponseEntity updateProdutoById(@PathVariable Integer id, @RequestBody ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
             this.produtoService.updateProdutoById(id, produtoRequestDTO);
             return ResponseEntity.ok().build();
         }
-        catch (RuntimeException idInvalido){
+        catch (RuntimeException e){
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/nome/{nome}")
-    public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestBody ProdutoRequestDTO produtoRequestDTO){
+    public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestBody ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
             this.produtoService.updateProdutoByNome(nome, produtoRequestDTO);
             return ResponseEntity.ok().build();
         }
-        catch (RuntimeException idInvalido){
+        catch (RuntimeException e){
             return ResponseEntity.badRequest().build();
         }
     }
@@ -82,19 +95,24 @@ public class ProdutoController {
 
     // DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity deleteProdutoById(@PathVariable int id){
+    public ResponseEntity deleteProdutoById(@PathVariable Integer id){
         try{
             this.produtoService.deleteProdutoById(id);
             return ResponseEntity.ok().build();
         }
-        catch (RuntimeException idInvalido){
+        catch (RuntimeException e){
             return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/nome/{nome}")
     public ResponseEntity deleteProdutoByNome(@PathVariable String nome){
-        this.produtoService.deleteProdutoByNome(nome);
-        return ResponseEntity.ok().build();
+        try{
+            this.produtoService.deleteProdutoByNome(nome);
+            return ResponseEntity.ok().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.badRequest().build();
+        }
+
     }
 }

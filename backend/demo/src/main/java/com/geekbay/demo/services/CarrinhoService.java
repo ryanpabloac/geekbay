@@ -13,6 +13,7 @@ import com.geekbay.demo.mappers.CarrinhoMapper;
 import com.geekbay.demo.mappers.ProdutoMapper;
 import com.geekbay.demo.repositories.PedidoRepository;
 
+import com.geekbay.demo.repositories.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class CarrinhoService {
     private final ProdutoMapper produtoMapper;
     private final PedidoRepository pedidoRepository;
     private final EnderecoService enderecoService;
+    private final UsuarioRepository usuarioRepository;
 
     private Pedido getOuCriarCarrinho(Long usuarioId) {
         Usuario usuario = usuarioService.getUser(usuarioId);
@@ -98,11 +100,13 @@ public class CarrinhoService {
     }
 
     public PedidoResponseDTO checkout(CheckoutDTO dto) {
-        Pedido carrinho = getOuCriarCarrinho(dto.usuarioId().longValue());
+        Pedido carrinho = getOuCriarCarrinho(dto.usuarioId());
 
         if(carrinho.getItens().isEmpty()) throw new NotFoundException("Carrinho não localizado");
 
         EnderecoResponseDTO enderecoDTO = enderecoService.getEnderecoByUsuarioId(dto.usuarioId());
+
+        Usuario usuarioCarrinho = usuarioRepository.findById(dto.usuarioId()).get();
 
         carrinho.setEndereco(new Endereco(
                 enderecoDTO.cep(),
@@ -111,7 +115,10 @@ public class CarrinhoService {
                 enderecoDTO.neighborhood(),
                 enderecoDTO.street(),
                 enderecoDTO.service(),
-                dto.usuarioId()
+                enderecoDTO.number(),
+                enderecoDTO.complement(),
+                usuarioCarrinho
+                //dto.usuarioId()
         ));
 
         carrinho.setDataPedido(LocalDateTime.now());

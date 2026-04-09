@@ -53,7 +53,6 @@ public class Produto {
         this.ativo = ativo;
         this.categoria = categoria;
     }
-
     public Produto(ProdutoRequestDTO produtoRequestDTO){
         this.nome = produtoRequestDTO.nome();
         this.descricao = produtoRequestDTO.descricao();
