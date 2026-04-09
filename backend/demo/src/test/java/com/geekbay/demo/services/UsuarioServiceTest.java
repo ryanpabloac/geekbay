@@ -1,6 +1,6 @@
 package com.geekbay.demo.services;
 
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.exceptions.AlreadyExistsException;
 import com.geekbay.demo.repositories.UsuarioRepository;
 import org.junit.jupiter.api.Test;

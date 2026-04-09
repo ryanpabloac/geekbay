@@ -3,7 +3,8 @@ package com.geekbay.demo.services;
 import com.geekbay.demo.dtos.endereco.EnderecoResponseDTO;
 import com.geekbay.demo.dtos.pedido.*;
 import com.geekbay.demo.dtos.produto.ProdutoResponseDTO;
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.dtos.usuario.UsuarioResponseDTO;
+import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.pedido.*;
 import com.geekbay.demo.entities.produto.Produto;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -36,7 +36,7 @@ public class CarrinhoService {
     private final UsuarioRepository usuarioRepository;
 
     private Pedido getOuCriarCarrinho(Long usuarioId) {
-        Usuario usuario = usuarioService.getUser(usuarioId);
+        Usuario usuario = usuarioService.getUserEntity(usuarioId);
 
         List<Pedido> pedidoList = pedidoRepository.findByUsuarioIdAndStatus(usuarioId, OrderStatus.CARRINHO);
         Pedido carrinho;

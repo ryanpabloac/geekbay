@@ -1,7 +1,7 @@
 package com.geekbay.demo.entities.endereco;
 
 import com.geekbay.demo.dtos.endereco.EnderecoRequestDTO;
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.entities.usuario.Usuario;
 import jakarta.persistence.*;
 
 @Entity(name = "endereco")

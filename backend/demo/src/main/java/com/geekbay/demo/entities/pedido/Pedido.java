@@ -1,7 +1,7 @@
 package com.geekbay.demo.entities.pedido;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.produto.Produto;
 import com.geekbay.demo.enums.OrderStatus;
