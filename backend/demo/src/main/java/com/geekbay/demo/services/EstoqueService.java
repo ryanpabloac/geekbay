@@ -8,9 +8,12 @@ import com.geekbay.demo.exceptions.InsufficientStockException;
 import com.geekbay.demo.exceptions.NotFoundException;
 import com.geekbay.demo.repositories.EstoqueRepository;
 import com.geekbay.demo.repositories.ProdutoRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EstoqueService {
@@ -24,8 +27,9 @@ public class EstoqueService {
 
     // GET
     public List<EstoqueResponseDTO> getEstoqueList(){
-        return this.estoqueRepository.findAll().stream().map(estoque -> new EstoqueResponseDTO(estoque)).toList();
+        return this.estoqueRepository.findAll(Sort.by("id").ascending()).stream().map(estoque -> new EstoqueResponseDTO(estoque)).toList();
     }
+
     public EstoqueResponseDTO getEstoqueByProdutoId(Integer id){
         Estoque produtoASerBuscadoNoEstoque = this.estoqueRepository.findByProdutoId(id);
         if(produtoASerBuscadoNoEstoque != null){
@@ -36,20 +40,21 @@ public class EstoqueService {
 
     // POST
     public void addNewProdutoInEstoque(EstoqueRequestDTO estoqueRequestDTO){
-        Produto produtoAdd = this.produtoRepository.findById(estoqueRequestDTO.produto_id()).get();
+        Optional<Produto> produtoAdd = this.produtoRepository.findById(estoqueRequestDTO.produto_id());
+        if(produtoAdd.isEmpty()) throw new RuntimeException("ID do produto inválido");
         Estoque estoqueAdd = new Estoque();
         estoqueAdd.setQuantidade(estoqueRequestDTO.quantidade());
-        estoqueAdd.setProduto(produtoAdd);
+        estoqueAdd.setProduto(produtoAdd.get());
         this.estoqueRepository.save(estoqueAdd);
     }
 
     // PUT
+    @Transactional
     public void updateQuantidadeByProdutoId(Integer id, EstoqueRequestDTO estoqueRequestDTO){
         Estoque estoqueASerBuscado = this.estoqueRepository.findByProdutoId(id);
         if(estoqueASerBuscado != null){
             estoqueASerBuscado.setQuantidade(estoqueRequestDTO.quantidade());
             estoqueASerBuscado.setProduto(this.produtoRepository.findById(id).get());
-            this.estoqueRepository.save(estoqueASerBuscado);
         }
         else throw new RuntimeException("ID inválido ou produto inexistente");;
     }
