@@ -18,7 +18,7 @@ public class PedidoController {
         this.pedidoService = pedidoService;
     }
 
-    @GetMapping("{usuarioId}")
+    @GetMapping("/{usuarioId}")
     public ListarPedidosAnterioresResponseDTO listLastOrders(@PathVariable Long usuarioId) {
         return pedidoService.listLastOrders(usuarioId);
     }

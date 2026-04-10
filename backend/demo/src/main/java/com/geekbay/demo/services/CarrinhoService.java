@@ -3,7 +3,8 @@ package com.geekbay.demo.services;
 import com.geekbay.demo.dtos.endereco.EnderecoResponseDTO;
 import com.geekbay.demo.dtos.pedido.*;
 import com.geekbay.demo.dtos.produto.ProdutoResponseDTO;
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.dtos.usuario.UsuarioResponseDTO;
+import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.pedido.*;
 import com.geekbay.demo.entities.produto.Produto;
@@ -13,6 +14,7 @@ import com.geekbay.demo.mappers.CarrinhoMapper;
 import com.geekbay.demo.mappers.ProdutoMapper;
 import com.geekbay.demo.repositories.PedidoRepository;
 
+import com.geekbay.demo.repositories.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -32,9 +33,10 @@ public class CarrinhoService {
     private final ProdutoMapper produtoMapper;
     private final PedidoRepository pedidoRepository;
     private final EnderecoService enderecoService;
+    private final UsuarioRepository usuarioRepository;
 
     private Pedido getOuCriarCarrinho(Long usuarioId) {
-        Usuario usuario = usuarioService.getUser(usuarioId);
+        Usuario usuario = usuarioService.getUserEntity(usuarioId);
 
         List<Pedido> pedidoList = pedidoRepository.findByUsuarioIdAndStatus(usuarioId, OrderStatus.CARRINHO);
         Pedido carrinho;
@@ -98,11 +100,13 @@ public class CarrinhoService {
     }
 
     public PedidoResponseDTO checkout(CheckoutDTO dto) {
-        Pedido carrinho = getOuCriarCarrinho(dto.usuarioId().longValue());
+        Pedido carrinho = getOuCriarCarrinho(dto.usuarioId());
 
         if(carrinho.getItens().isEmpty()) throw new NotFoundException("Carrinho não localizado");
 
         EnderecoResponseDTO enderecoDTO = enderecoService.getEnderecoByUsuarioId(dto.usuarioId());
+
+        Usuario usuarioCarrinho = usuarioRepository.findById(dto.usuarioId()).get();
 
         carrinho.setEndereco(new Endereco(
                 enderecoDTO.cep(),
@@ -111,7 +115,10 @@ public class CarrinhoService {
                 enderecoDTO.neighborhood(),
                 enderecoDTO.street(),
                 enderecoDTO.service(),
-                dto.usuarioId()
+                enderecoDTO.number(),
+                enderecoDTO.complement(),
+                usuarioCarrinho
+                //dto.usuarioId()
         ));
 
         carrinho.setDataPedido(LocalDateTime.now());

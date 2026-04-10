@@ -24,20 +24,32 @@ public class EstoqueController {
     }
     @GetMapping("/produto/{id}")
     public ResponseEntity<EstoqueResponseDTO> getEstoqueByProdutoId(@PathVariable Integer id){
-        return ResponseEntity.ok(this.estoqueService.getEstoqueByProdutoId(id));
+        try{
+            return ResponseEntity.ok(this.estoqueService.getEstoqueByProdutoId(id));
+        }catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // POST
     @PostMapping()
     public ResponseEntity addNewProdutoInEstoque(@RequestBody EstoqueRequestDTO estoqueRequestDTO){
-        this.estoqueService.addNewProdutoInEstoque(estoqueRequestDTO);
-        return ResponseEntity.ok().build();
+        try{
+            this.estoqueService.addNewProdutoInEstoque(estoqueRequestDTO);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // PUT
     @PutMapping("/produto/{id}")
     public ResponseEntity updateQuantidadeByProdutoId(@PathVariable Integer id, @RequestBody EstoqueRequestDTO estoqueRequestDTO){
-        this.estoqueService.updateQuantidadeByProdutoId(id, estoqueRequestDTO);
-        return ResponseEntity.ok().build();
+        try{
+            this.estoqueService.updateQuantidadeByProdutoId(id, estoqueRequestDTO);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

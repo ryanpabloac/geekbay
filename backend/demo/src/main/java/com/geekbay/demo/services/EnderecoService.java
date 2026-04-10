@@ -2,7 +2,7 @@ package com.geekbay.demo.services;
 
 import com.geekbay.demo.dtos.endereco.EnderecoRequestDTO;
 import com.geekbay.demo.dtos.endereco.EnderecoResponseDTO;
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.exceptions.NotFoundException;
 import com.geekbay.demo.repositories.EnderecoRepository;

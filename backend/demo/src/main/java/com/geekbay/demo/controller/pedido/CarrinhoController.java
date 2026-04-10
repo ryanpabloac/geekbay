@@ -18,9 +18,9 @@ public class CarrinhoController {
         this.carrinhoService = carrinhoService;
     }
 
-    @GetMapping("{userId}")
-    public ResponseEntity<CarrinhoResposeDTO> showCart(@PathVariable Long userId) {
-        CarrinhoResposeDTO carrinhoResposeDTO = carrinhoService.getCarrinho(userId);
+    @GetMapping("/{usuarioId}")
+    public ResponseEntity<CarrinhoResposeDTO> showCart(@PathVariable Long usuarioId) {
+        CarrinhoResposeDTO carrinhoResposeDTO = carrinhoService.getCarrinho(usuarioId);
 
         return ResponseEntity.ok(carrinhoResposeDTO);
     }

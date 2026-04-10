@@ -1,1 +1,3 @@
 src/main/resources/application.properties
+/backend/demo/src/main/resources/application.properties
+.idea/

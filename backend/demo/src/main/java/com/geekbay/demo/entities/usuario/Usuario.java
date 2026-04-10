@@ -1,4 +1,4 @@
-package com.geekbay.demo.entities;
+package com.geekbay.demo.entities.usuario;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.geekbay.demo.entities.endereco.Endereco;

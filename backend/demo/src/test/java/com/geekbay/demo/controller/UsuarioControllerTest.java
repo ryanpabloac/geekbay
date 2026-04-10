@@ -1,6 +1,6 @@
 package com.geekbay.demo.controller;
 
-import com.geekbay.demo.entities.Usuario;
+import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.enums.Profile;
 import com.geekbay.demo.services.UsuarioService;
 import org.junit.jupiter.api.DisplayName;
