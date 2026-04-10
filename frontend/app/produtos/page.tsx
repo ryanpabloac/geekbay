@@ -329,7 +329,9 @@ export default function Produtos() {
         imagem: "",
         quantidade: 0,
       });
-      listarTodos();
+      listarTodos();  // Aqui tem que atualizar o formulário do estoque após atualizar o produto
+      listarEstoque(); 
+    
     } catch (error) {
       console.error(error)
       setMensagemModal("Erro ao atualizar produto.");
