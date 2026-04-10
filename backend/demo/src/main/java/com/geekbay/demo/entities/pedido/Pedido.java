@@ -62,7 +62,7 @@ public class Pedido {
         Objects.requireNonNull(dataPedido, "Data do pedido é obrigatório");
 
         if(dataPedido.isAfter(LocalDateTime.now()))
-            throw new InvalidOrderDateException("Data do pedido não poder ser no futuro");
+            throw new InvalidOrderDateException("Data do pedido não pode ser no futuro");
         this.dataPedido = dataPedido;
     }
 

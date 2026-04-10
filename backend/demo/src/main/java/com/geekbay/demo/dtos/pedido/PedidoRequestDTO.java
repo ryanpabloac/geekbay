@@ -2,15 +2,16 @@ package com.geekbay.demo.dtos.pedido;
 
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.pedido.ItemPedido;
-import com.geekbay.demo.entities.pedido.Pedido;
 import com.geekbay.demo.entities.usuario.Usuario;
 import com.geekbay.demo.enums.OrderStatus;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record PedidoResponseDTO(
+public record PedidoRequestDTO(
+        @NotNull
         Long id,
         LocalDateTime dataPedido,
         OrderStatus status,
@@ -19,17 +20,4 @@ public record PedidoResponseDTO(
         Endereco endereco,
         Usuario usuario,
         List<ItemPedido> itens
-) {
-    public PedidoResponseDTO(Pedido pedido) {
-        this(
-                pedido.getId(),
-                pedido.getDataPedido(),
-                pedido.getStatus(),
-                pedido.getValorTotal(),
-                pedido.getValorFrete(),
-                pedido.getEndereco(),
-                pedido.getUsuario(),
-                pedido.getItens()
-        );
-    }
-}
+) {}
