@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface PedidoRepository extends JpaRepository<Pedido,Long> {
     List<Pedido> findByUsuarioIdAndStatus(Long usuarioId, OrderStatus status);
+    //Pedido findByUsuarioIdAndStatus(Long usuarioId, OrderStatus status);
     List<Pedido> findByUsuarioId(Long usuarioId);
     List<Pedido> findByStatus(OrderStatus status);
 }

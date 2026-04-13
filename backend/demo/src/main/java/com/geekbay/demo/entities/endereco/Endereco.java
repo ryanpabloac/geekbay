@@ -41,6 +41,20 @@ public class Endereco {
         this.complement = complement;
         this.usuario = usuario;
     }
+    public Endereco(String cep, String state, String city, String neighborhood,
+                    String street, String service, String number,
+                    String complement) {
+        this.cep = cep;
+        this.state = state;
+        this.city = city;
+        this.neighborhood = neighborhood;
+        this.street = street;
+        this.service = service;
+        this.number = number;
+        this.complement = complement;
+    }
+
+
 
     public Endereco(EnderecoRequestDTO enderecoRequestDTO){
         this.cep = enderecoRequestDTO.cep();

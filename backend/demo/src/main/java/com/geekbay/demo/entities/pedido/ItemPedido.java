@@ -5,6 +5,8 @@ import com.geekbay.demo.entities.produto.Produto;
 import com.geekbay.demo.exceptions.InvalidValueException;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -26,11 +28,13 @@ public class ItemPedido {
     private BigDecimal precoUnitario;
 
     @ManyToOne
+    @Cascade(CascadeType.MERGE)
     @JsonBackReference
     @JoinColumn(name="pedido_id", nullable = false)
     private Pedido pedido;
 
     @ManyToOne
+    @Cascade(CascadeType.MERGE)
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 

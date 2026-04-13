@@ -45,12 +45,12 @@ public class Usuario implements Serializable {
     private Profile perfil;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "usuario")
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Endereco> enderecos = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "usuario")
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Pedido> pedidos = new ArrayList<>();
 }
