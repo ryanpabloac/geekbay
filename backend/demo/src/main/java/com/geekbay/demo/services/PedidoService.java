@@ -23,9 +23,10 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
 
-    public ListarPedidosAnterioresResponseDTO listLastOrders(Long usuarioId) {
-        List<Pedido> pedidos = pedidoRepository.findByUsuarioId(usuarioId);
-        return new ListarPedidosAnterioresResponseDTO(pedidos);
+    public List<PedidoResponseDTO> listLastOrders(Long usuarioId) {
+        List<PedidoResponseDTO> pedidos = pedidoRepository.findByUsuarioId(usuarioId)
+                .stream().map(pedido -> new PedidoResponseDTO(pedido)).toList();
+        return pedidos;
     }
 
     public List<PedidoResponseDTO> getAllOrdersList(){
@@ -36,15 +37,16 @@ public class PedidoService {
                 .toList();
     }
 
-    public ListarPedidosAnterioresResponseDTO getLastOrdersByStatus(String status){
+    public List<PedidoResponseDTO> getLastOrdersByStatus(String status){
         //OrderStatus statusString = Enum.valueOf(OrderStatus.class, status);
-        List<Pedido> ordersListQuery = this.pedidoRepository
+        List<PedidoResponseDTO> ordersListQuery = this.pedidoRepository
                 .findAll()
                 .stream()
                 .filter(pedido -> pedido.getStatus().toString().equalsIgnoreCase(status))
+                .map(pedido -> new PedidoResponseDTO(pedido))
                 .toList();  // Filtro pra remover maiúsculas
         if(ordersListQuery.isEmpty()) throw new NotFoundException("Nenhum pedido com esse status");
-        return new ListarPedidosAnterioresResponseDTO(ordersListQuery);
+        return ordersListQuery;
     }
 
     @Transactional

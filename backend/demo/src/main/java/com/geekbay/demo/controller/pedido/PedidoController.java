@@ -25,7 +25,7 @@ public class PedidoController {
     }
 
     @GetMapping("/{usuarioId}") // Lista últimos pedidos by usuarioId
-    public ResponseEntity<ListarPedidosAnterioresResponseDTO> listLastOrders(@PathVariable Long usuarioId) {
+    public ResponseEntity<List<PedidoResponseDTO>> listLastOrders(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(pedidoService.listLastOrders(usuarioId));
     }
 
@@ -35,7 +35,7 @@ public class PedidoController {
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<ListarPedidosAnterioresResponseDTO> getLastOrdersByStatus(@PathVariable String status){
+    public ResponseEntity<List<PedidoResponseDTO>> getLastOrdersByStatus(@PathVariable String status){
         try{
             return ResponseEntity.ok(pedidoService.getLastOrdersByStatus(status));
         } catch (NotFoundException e){

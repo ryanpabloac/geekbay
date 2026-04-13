@@ -1,6 +1,7 @@
 package com.geekbay.demo.entities.usuario;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.geekbay.demo.dtos.usuario.UsuarioResponseDTO;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.pedido.Pedido;
 import com.geekbay.demo.enums.Profile;
@@ -53,4 +54,12 @@ public class Usuario implements Serializable {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Pedido> pedidos = new ArrayList<>();
+
+    public Usuario(UsuarioResponseDTO usuarioResponseDTO){
+        this.nome = usuarioResponseDTO.nome();
+        this.cpf = usuarioResponseDTO.cpf();
+        this.email = usuarioResponseDTO.email();
+        this.telefone = usuarioResponseDTO.telefone();
+    }
+
 }

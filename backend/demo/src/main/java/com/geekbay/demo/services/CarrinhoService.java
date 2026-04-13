@@ -103,6 +103,7 @@ public class CarrinhoService {
 
         EnderecoResponseDTO enderecoDTO = enderecoService.getEnderecoByUsuarioId(dto.usuarioId());
         Usuario usuarioCarrinho = usuarioRepository.findById(dto.usuarioId()).get();
+        UsuarioResponseDTO usuarioResponseDTO = new UsuarioResponseDTO(usuarioCarrinho);
 
         carrinho.setEndereco(new Endereco(
                 enderecoDTO.cep(),
@@ -114,7 +115,6 @@ public class CarrinhoService {
                 enderecoDTO.number(),
                 enderecoDTO.complement(),
                 usuarioCarrinho
-                //dto.usuarioId()
         ));
 
         carrinho.setDataPedido(LocalDateTime.now());
@@ -122,6 +122,16 @@ public class CarrinhoService {
 
         pedidoRepository.save(carrinho);
 
-        return new PedidoResponseDTO(carrinho);
+        return new PedidoResponseDTO(
+                carrinho.getId(),
+                LocalDateTime.now(),
+                OrderStatus.PROCESSANDO,
+                carrinho.getValorTotal(),
+                carrinho.getValorFrete(),
+                enderecoDTO,
+                usuarioResponseDTO,
+                carrinho.getItens()
+        );
+        //return new PedidoResponseDTO(carrinho);
     }
 }

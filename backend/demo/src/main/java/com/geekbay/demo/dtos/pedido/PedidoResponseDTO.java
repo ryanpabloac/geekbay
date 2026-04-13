@@ -1,5 +1,7 @@
 package com.geekbay.demo.dtos.pedido;
 
+import com.geekbay.demo.dtos.endereco.EnderecoResponseDTO;
+import com.geekbay.demo.dtos.usuario.UsuarioResponseDTO;
 import com.geekbay.demo.entities.endereco.Endereco;
 import com.geekbay.demo.entities.pedido.ItemPedido;
 import com.geekbay.demo.entities.pedido.Pedido;
@@ -16,8 +18,8 @@ public record PedidoResponseDTO(
         OrderStatus status,
         BigDecimal valorTotal,
         BigDecimal valorFrete,
-        Endereco endereco,
-        Usuario usuario,
+        EnderecoResponseDTO endereco,
+        UsuarioResponseDTO usuarioResponseDTO,
         List<ItemPedido> itens
 ) {
     public PedidoResponseDTO(Pedido pedido) {
@@ -27,8 +29,8 @@ public record PedidoResponseDTO(
                 pedido.getStatus(),
                 pedido.getValorTotal(),
                 pedido.getValorFrete(),
-                pedido.getEndereco(),
-                pedido.getUsuario(),
+                new EnderecoResponseDTO(pedido.getEndereco()),
+                new UsuarioResponseDTO(pedido.getUsuario()),
                 pedido.getItens()
         );
     }

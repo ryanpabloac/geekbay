@@ -1,6 +1,7 @@
 package com.geekbay.demo.entities.endereco;
 
 import com.geekbay.demo.dtos.endereco.EnderecoRequestDTO;
+import com.geekbay.demo.dtos.usuario.UsuarioResponseDTO;
 import com.geekbay.demo.entities.usuario.Usuario;
 import jakarta.persistence.*;
 
@@ -43,7 +44,7 @@ public class Endereco {
     }
     public Endereco(String cep, String state, String city, String neighborhood,
                     String street, String service, String number,
-                    String complement) {
+                    String complement, UsuarioResponseDTO usuarioResponseDTO) {
         this.cep = cep;
         this.state = state;
         this.city = city;
@@ -52,6 +53,7 @@ public class Endereco {
         this.service = service;
         this.number = number;
         this.complement = complement;
+        this.usuario = new Usuario(usuarioResponseDTO);
     }
 
 
