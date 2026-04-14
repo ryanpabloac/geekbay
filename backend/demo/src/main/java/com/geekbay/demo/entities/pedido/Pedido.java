@@ -124,6 +124,7 @@ public class Pedido {
         Optional<ItemPedido> itemPedido = itemPedidoStream.findFirst();
         if(itemPedido.isEmpty())
             throw new NotFoundException(
+
                     String.format("Produto '%s' não está presente no pedido", produto.getNome())
             );
 
