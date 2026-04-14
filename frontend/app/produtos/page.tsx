@@ -101,7 +101,7 @@ export default function Produtos() {
     // Lista clientes - usuários dentro do Back
   const listarClientes = async () => {
     try {
-      const response = await fetch("http://localhost:5000/clientes");
+      const response = await fetch("http://localhost:8080/usuarios");
       const dados = await response.json();
       setClientes(dados);
     } catch (error) {
@@ -854,7 +854,7 @@ export default function Produtos() {
                   <td>{c.name}</td>
                   <td>{c.email}</td>
                   <td>
-                    {c.address.city} - {c.address.state}
+                    {/* {c.address.city} - {c.address.state} */}
                   </td>
                   <td>
                     <button

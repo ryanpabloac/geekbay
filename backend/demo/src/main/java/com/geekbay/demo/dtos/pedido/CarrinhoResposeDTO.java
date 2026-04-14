@@ -8,11 +8,16 @@ import java.util.List;
 
 public record CarrinhoResposeDTO(
         Long id,
-        List<ItemPedido> itens,
+        List<ItemPedidoResponseDTO> itens,
         BigDecimal valorTotal,
         BigDecimal valorFrete
 ) {
     public CarrinhoResposeDTO(Pedido pedido, BigDecimal valorTotal, BigDecimal valorFrete) {
-        this(pedido.getId(), pedido.getItens(), valorTotal, valorFrete);
+        this(
+            pedido.getId(),
+            pedido.getItens().stream().map(ItemPedidoResponseDTO::new).toList(),
+            valorTotal,
+            valorFrete
+        );
     }
 }

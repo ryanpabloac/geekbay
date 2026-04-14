@@ -1,6 +1,7 @@
 package com.geekbay.demo.controller.pedido;
 
-import com.geekbay.demo.dtos.pedido.*;
+import
+        com.geekbay.demo.dtos.pedido.*;
 import com.geekbay.demo.services.CarrinhoService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,7 +29,7 @@ public class CarrinhoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Item adicionado ao carrinho com sucesso")
     })
-    @PostMapping
+    @PostMapping    // Colocar try-catch pra exceção de ID do produto inexistente - Colocar pra ID do usuário inexistente
     public ResponseEntity<CarrinhoResposeDTO> addNewItemToCart(@RequestBody AdicionarAoCarrinhoDTO body) {
         CarrinhoResposeDTO dto = this.carrinhoService.adicionarAoCarinho(body);
 
@@ -50,7 +51,7 @@ public class CarrinhoController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/checkout")
+    @PostMapping("/checkout")   // Acho melhor mandar o usuarioId por PathVariable ao invés de requestbody
     public ResponseEntity<PedidoResponseDTO> checkout(@RequestBody CheckoutDTO body) {
         PedidoResponseDTO dto = carrinhoService.checkout(body);
 

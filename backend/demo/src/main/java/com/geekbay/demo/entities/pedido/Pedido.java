@@ -11,6 +11,7 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Cascade;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,7 +23,6 @@ import java.util.stream.Stream;
 
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 public class Pedido {
 
@@ -40,10 +40,12 @@ public class Pedido {
     private BigDecimal valorFrete;
 
     @ManyToOne
+    @Cascade(org.hibernate.annotations.CascadeType.MERGE)
     @JoinColumn(name = "endereco_id")
     private Endereco endereco;
 
     @ManyToOne
+    @Cascade(org.hibernate.annotations.CascadeType.MERGE)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
@@ -57,12 +59,13 @@ public class Pedido {
         this.status = OrderStatus.CARRINHO;
         this.itens = new ArrayList<>();
     }
+    public Pedido(){}
 
     public void setDataPedido(LocalDateTime dataPedido) {
         Objects.requireNonNull(dataPedido, "Data do pedido é obrigatório");
 
         if(dataPedido.isAfter(LocalDateTime.now()))
-            throw new InvalidOrderDateException("Data do pedido não poder ser no futuro");
+            throw new InvalidOrderDateException("Data do pedido não pode ser no futuro");
         this.dataPedido = dataPedido;
     }
 
@@ -121,6 +124,7 @@ public class Pedido {
         Optional<ItemPedido> itemPedido = itemPedidoStream.findFirst();
         if(itemPedido.isEmpty())
             throw new NotFoundException(
+
                     String.format("Produto '%s' não está presente no pedido", produto.getNome())
             );
 
@@ -143,4 +147,5 @@ public class Pedido {
                 .findFirst()
                 .orElseThrow(() -> new ProductUnavailableException("Item inexistente no pedido"));
     }
+
 }

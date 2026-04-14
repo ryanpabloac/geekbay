@@ -41,11 +41,7 @@ public class UsuarioService {
         if(user.isEmpty()) throw new NotFoundException("Usuário não encontrado");
         return new UsuarioResponseDTO(user.get());
     }
-    public Usuario getUserEntity(final Long usuarioId) {
-        Optional<Usuario> user = userRepository.findById(usuarioId);
-        if(user.isEmpty()) throw new NotFoundException("Usuário não encontrado");
-        return user.get();
-    }
+
 
 
     public List<UsuarioResponseDTO> getUsersList(){
