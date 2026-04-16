@@ -49,11 +49,21 @@ const ModalAviso = ({
 };
 
 export default function Produtos() {
+  const normalizarListaPedidos = (payload: any): any[] => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.content)) return payload.content;
+    if (Array.isArray(payload?.pedidos)) return payload.pedidos;
+    return [];
+  };
+
   const [produtos, setProdutos] = useState<any[]>([]);
   const [estoque, setEstoque] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
+  const [enderecoSelecionado, setEnderecoSelecionado] = useState<any>(null);
+  const [carregandoEndereco, setCarregandoEndereco] = useState(false);
+  const [erroEndereco, setErroEndereco] = useState("");
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [pedidosOriginais, setPedidosOriginais] = useState<any[]>([]);
   const [pedidoParaExcluir, setPedidoParaExcluir] = useState<number | null>(
@@ -62,6 +72,8 @@ export default function Produtos() {
   const [mensagemModal, setMensagemModal] = useState("");
   const [mostrarModalBusca, setMostrarModalBusca] = useState(false);
   const [termoBusca, setTermoBusca] = useState("");
+  const [pedidoClienteModal, setPedidoClienteModal] = useState<any>(null);
+  const [pedidoProdutosModal, setPedidoProdutosModal] = useState<any>(null);
   const [idParaExcluir, setIdParaExcluir] = useState<any>(null);
   const [editandoEstoqueId, setEditandoEstoqueId] = useState<number | null>(
     null,
@@ -74,9 +86,9 @@ export default function Produtos() {
   const [formCadastrar, setFormCadastrar] = useState({
     categoria: "",
     nome: "",
-    preco: 0.0,
+    preco: "",
     imagem: "",
-    quantidade: 0,
+    quantidade: "",
   });
 
     // Edição de produto
@@ -84,7 +96,7 @@ export default function Produtos() {
     id: "",
     categoria: "",
     nome: "",
-    preco: 0.0,
+    preco: "",
     descricao: "",
     imagem: "",
     quantidade: 0,
@@ -109,27 +121,30 @@ export default function Produtos() {
     }
   };
 
-    // Lista produtos
+    // Lista produtos - Endpoint: GET /api/produto
+    // Retorna lista de ProdutoResponseDTO com campos: id, nome, descricao, preco, imagem, categoriaResponseDTO, ativo
   const listarTodos = async () => {
     try {
       const response = await fetch("http://localhost:8080/api/produto");
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error("Falha na requisição");
       const dados = await response.json();
       setProdutos(dados);
     } catch (error) {
-      setMensagemModal("Erro ao carregar produtos.");
+      console.error("Erro ao carregar produtos:", error);
+      setMensagemModal("Erro ao carregar produtos. Verifique se o backend está rodando.");
     }
   };
 
-    // Lista estoque
+    // Lista estoque - Endpoint: GET /api/estoque
+    // Retorna lista de EstoqueResponseDTO com campos: quantidade, produtoResponseDTO (id, nome, preco, imagem, categoriaResponseDTO)
   const listarEstoque = async () => {
     try {
       const response = await fetch("http://localhost:8080/api/estoque");
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error("Falha na requisição");
       const dados = await response.json();
       setEstoque(dados.map(mapEstoque));
     } catch (error) {
-      console.error("Erro ao carregar estoque.");
+      console.error("Erro ao carregar estoque:", error);
     }
   };
 
@@ -145,15 +160,22 @@ export default function Produtos() {
     }
   };
 
-    // Lista pedidos
+    // Lista pedidos - Endpoint: GET /api/pedidos
+    // Retorna lista de PedidoResponseDTO do backend Spring Boot
   const listarPedidos = async () => {
     try {
-      const response = await fetch("http://localhost:5000/pedidos");
+      const response = await fetch("http://localhost:8080/api/pedidos");
+      if (!response.ok) throw new Error("Falha ao carregar pedidos");
+
       const dados = await response.json();
-      setPedidos(dados);
-      setPedidosOriginais(dados);
+      const listaPedidos = normalizarListaPedidos(dados);
+
+      setPedidos(listaPedidos);
+      setPedidosOriginais(listaPedidos);
     } catch (error) {
-      console.error("Erro nos pedidos");
+      console.error("Erro ao carregar pedidos:", error);
+      setPedidos([]);
+      setPedidosOriginais([]);
     }
   };
 
@@ -165,12 +187,14 @@ export default function Produtos() {
     );
   };
 
+  // Excluir pedido - Endpoint: DELETE /api/pedidos/{id}
+  // OBS: Backend precisa implementar este endpoint ainda
   const confirmarExclusaoPedido = async () => {
     if (!pedidoParaExcluir) return;
 
     try {
       const response = await fetch(
-        `http://localhost:5000/pedidos/${pedidoParaExcluir}`,
+        `http://localhost:8080/api/pedidos/${pedidoParaExcluir}`,
         {
           method: "DELETE",
         },
@@ -182,46 +206,51 @@ export default function Produtos() {
         setPedidos(novaLista);
         setPedidosOriginais(novaLista);
         setPedidoParaExcluir(null);
+      } else {
+        setMensagemModal("Erro: Backend não implementou endpoint DELETE /api/pedidos/{id}");
       }
     } catch (error) {
-      setMensagemModal("Erro ao conectar com o servidor.");
+      setMensagemModal("Erro ao excluir pedido: " + error);
     }
   };
 
-    // Cadastrar produto
+    // Cadastrar produto - Endpoint: POST /api/produto
+    // Backend espera ProdutoRequestDTO: { nome, descricao, preco, imagem, categoria_id, ativo }
   const handleCadastrar = async (e: any) => {
     e.preventDefault();
     try {
-        // Busca categoria pelo nome dado no form e cria produto com categoria.id
-      const responseCategoria = (await fetch(`http://localhost:8080/api/categoria/nome/${formCadastrar.categoria}`));
-      if(!responseCategoria.ok) throw new Error("Categoria não encontrada.");
-      const categoria = await responseCategoria.json();
-
-      //const responseProduto = await fetch("http://localhost:5000/produtos", {
+      // 1. Busca categoria pelo nome para obter o ID
+      const responseCategoria = await fetch(`http://localhost:8080/api/categoria/nome/${formCadastrar.categoria}`);
+      if(!responseCategoria.ok) throw new Error("Categoria inexistente");
+     
+        const categoria = await responseCategoria.json();
+      
+      // 2. Cria produto com DTO compatível com backend
       const responseProduto = await fetch("http://localhost:8080/api/produto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          categoria_id: categoria.id,
           nome: formCadastrar.nome,
-          preco: formCadastrar.preco,
-          imagem: formCadastrar.imagem || ""
+          descricao: "",  // Campo obrigatório no backend, mas não usado no frontend
+          preco: Number(formCadastrar.preco),
+          imagem: formCadastrar.imagem || "",
+          categoria_id: categoria.id,
+          ativo: true  // Produto nasce ativo por padrão
         }),
       });
       if (!responseProduto.ok) throw new Error("Erro no cadastro do produto");
 
-        // Depois preciso otimizar isso aqui
+      // 3. Busca produto cadastrado para obter o ID gerado
       const responseProdutoCadastrado = await fetch(`http://localhost:8080/api/produto/nome/${formCadastrar.nome}`);
       if(!responseProdutoCadastrado.ok) throw new Error("Erro na busca do produto cadastrado");
       const idProduto = await responseProdutoCadastrado.json();
 
+      // 4. Cadastra estoque vinculado ao produto
       const novoEstoque = {
         produto_id: idProduto.id,
-        quantidade: formCadastrar.quantidade,
+        quantidade: Number(formCadastrar.quantidade),
       };
 
-
-        // Aqui é onde o estoque é cadastrado com o produto criado
       await fetch("http://localhost:8080/api/estoque", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -232,108 +261,93 @@ export default function Produtos() {
       setFormCadastrar({
         categoria: "",
         nome: "",
-        preco: 0.0,
+        preco: "",
         imagem: "",
-        quantidade: 0,
+        quantidade: "",
       });
       listarTodos();
       listarEstoque();
     } catch (error) {
-      console.error(error);
+      console.error("Erro ao cadastrar:", error);
       setMensagemModal("Erro ao cadastrar produto ou estoque.");
     }
   };
 
+  // Prepara formulário de edição com dados do produto
+  // Backend retorna ProdutoResponseDTO: { id, nome, descricao, preco, imagem, categoriaResponseDTO, ativo }
   const prepararEdicao = (produto: any) => {
-    console.log("Produto recebido:", produto);
     const itemEstoque = estoque.find(
       (e) => String(e.produto_id) === String(produto.id),
-    );  // Busca dentro do estoque o item com produto_id correspondente
-    console.log("Item estoque encontrado:", itemEstoque);
-    
+    );
+
     setFormEditar({
       id: produto.id,
       categoria: produto.categoriaResponseDTO?.nome || produto.categoria || "",
       nome: produto.nome || "",
-      preco: produto.preco || 0.0,
-      descricao: produto.descricao || "",
-      imagem: produto.imagem || produto.img || "",
+      preco: produto.preco != null ? String(produto.preco) : "",
+      descricao: produto.descricao || "",  // Campo do backend
+      imagem: produto.imagem || "",
       quantidade: itemEstoque ? itemEstoque.quantidade : 0,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-    // Salvar atualização do produto
+    // Salvar edição do produto - Endpoint: PUT /api/produto/{id}
+    // Backend espera ProdutoUpdateRequestDTO: { nome, descricao, preco, imagem, categoria_id, ativo }
   const handleSalvarEdicao = async (e: any) => {
     e.preventDefault();
     try {
-
-        // Atualiza a categoria para atualizar o produto com base no categoria.id
-      const updateCategoriaResponse = await fetch(
-        `http://localhost:8080/api/categoria/nome/${formEditar.categoria}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nome: formEditar.categoria
-          })
-        }
-      );
-      if(!updateCategoriaResponse.ok) throw new Error("Erro ao atualizar categoria.");
-
+      // 1. Busca categoria pelo nome para obter o ID atualizado
       const categoriaAtualizada = await fetch(
         `http://localhost:8080/api/categoria/nome/${formEditar.categoria}`
       );
       if (!categoriaAtualizada.ok) throw new Error("Categoria não encontrada.");
       const categoriaAtualizadaResponse = await categoriaAtualizada.json();
 
+      // 2. Atualiza produto com DTO compatível com backend
       const response = await fetch(
         `http://localhost:8080/api/produto/${formEditar.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            categoria_id: categoriaAtualizadaResponse.id,
             nome: formEditar.nome,
-            preco: formEditar.preco,
             descricao: formEditar.descricao,
+            preco: Number(formEditar.preco),
             imagem: formEditar.imagem,
+            categoria_id: categoriaAtualizadaResponse.id,
+            ativo: true  
           }),
         },
       );
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error("Falha ao atualizar produto");
 
-        // Verificar se esse ID está chegando
-          // pois não é pra ter produto.id no forms
-      const itemEstoque = estoque.find(
-        (est) => String(est.produto_id) === String(formEditar.id),
-      );
-
-      if (itemEstoque) {
-        await fetch(`http://localhost:8080/api/estoque/${itemEstoque.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            quantidade: Number(formEditar.quantidade),
-          }),
-        });
-      }
+      // 3. Atualiza estoque do produto
+      // Backend endpoint: PUT /api/estoque/produto/{id}
+      // Espera EstoqueRequestDTO: { quantidade, produto_id }
+      await fetch(`http://localhost:8080/api/estoque/produto/${formEditar.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quantidade: Number(formEditar.quantidade),
+          produto_id: formEditar.id,
+        }),
+      });
 
       setMensagemModal("Produto atualizado com sucesso!");
       setFormEditar({
         id: "",
         categoria: "",
         nome: "",
-        preco: 0.0,
+        preco: "",
         descricao: "",
         imagem: "",
         quantidade: 0,
       });
-      listarTodos();  // Aqui tem que atualizar o formulário do estoque após atualizar o produto
-      listarEstoque(); 
-    
+      listarTodos();
+      listarEstoque();
     } catch (error) {
-      console.error(error)
+      console.error("Erro ao atualizar:", error);
       setMensagemModal("Erro ao atualizar produto.");
     }
   };
@@ -343,18 +357,20 @@ export default function Produtos() {
     setMensagemModal("Tem certeza que deseja excluir este produto?");
   };
 
+    // Excluir produto - Endpoint: DELETE /api/produto/{id}
   const confirmarExclusao = async () => {
     try {
       const response = await fetch(
         `http://localhost:8080/api/produto/${idParaExcluir}`,
         { method: "DELETE" },
       );
-      if (!response.ok) throw new Error();
+      if (!response.ok) throw new Error("Falha ao excluir produto");
       setIdParaExcluir(null);
       setMensagemModal("Produto removido!");
       listarTodos();
       listarEstoque();
     } catch (error) {
+      console.error("Erro ao excluir:", error);
       setMensagemModal("Erro ao excluir produto.");
     }
   };
@@ -368,7 +384,8 @@ export default function Produtos() {
     });
   };
 
-    // Salvar estoque atualizado
+    // Salvar estoque atualizado - Endpoint: PUT /api/estoque/produto/{id}
+    // Backend espera EstoqueRequestDTO: { quantidade, produto_id }
   const salvarEstoque = async (id: number) => {
     try {
       await fetch(`http://localhost:8080/api/estoque/produto/${id}`, {
@@ -376,6 +393,7 @@ export default function Produtos() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quantidade: formEstoque.quantidade,
+          produto_id: id,  // Necessário enviar no DTO do backend
         }),
       });
 
@@ -383,22 +401,28 @@ export default function Produtos() {
       setEditandoEstoqueId(null);
       listarEstoque();
     } catch (error) {
+      console.error("Erro ao atualizar estoque:", error);
       setMensagemModal("Erro ao atualizar estoque.");
     }
   };
 
-    // Atualizar status do pedido
+    // Atualizar status do pedido - Endpoint: PUT /api/pedidos/atualizar/{id}?status={status}
+    // Backend usa enum OrderStatus: PENDENTE, PRONTO, ENVIADO, CANCELADO
   const atualizarStatusPedido = async (id: number, status: string) => {
     try {
-      await fetch(`http://localhost:5000/pedidos/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      setMensagemModal(`Pedido #${id} atualizado!`);
+      const response = await fetch(
+        `http://localhost:8080/api/pedidos/atualizar/${id}?status=${status}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      if (!response.ok) throw new Error("Falha ao atualizar status");
+      setMensagemModal(`Pedido #${id} atualizado para "${status}"!`);
       listarPedidos();
     } catch (error) {
-      setMensagemModal("Erro ao atualizar status.");
+      console.error("Erro ao atualizar status:", error);
+      setMensagemModal("Erro ao atualizar status do pedido.");
     }
   };
 
@@ -410,18 +434,100 @@ export default function Produtos() {
     }
   };
 
-    // Mapear itens do estoque 
+  const obterUsuarioId = (cliente: any): number | null => {
+    const candidato = cliente?.id;
+    const usuarioId = Number(candidato);
+    return Number.isFinite(usuarioId) && usuarioId > 0 ? usuarioId : null;
+  };
+
+  const abrirEnderecoCliente = async (cliente: any) => {
+    const usuarioId = obterUsuarioId(cliente);
+    if (!usuarioId) {
+      setMensagemModal("Não foi possível identificar o ID do usuário deste cliente.");
+      return;
+    }
+
+    setClienteSelecionado({
+      id: cliente?.id,
+      nome: cliente?.nome ?? "Cliente",
+      email: cliente?.email ?? "",
+    });
+    setEnderecoSelecionado(null);
+    setErroEndereco("");
+    setCarregandoEndereco(true);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/enderecos/usuario/${usuarioId}`,
+      );
+      if (!response.ok) throw new Error("Falha ao buscar endereço do cliente");
+
+      const dados = await response.json();
+      const endereco = Array.isArray(dados)
+        ? dados.find((item) => Number(item?.usuarioId) === usuarioId) || dados[0]
+        : dados;
+
+      if (!endereco) {
+        setErroEndereco("Nenhum endereço encontrado para este cliente.");
+      }
+
+      setEnderecoSelecionado(endereco || null);
+    } catch (error) {
+      console.error("Erro ao buscar endereço do cliente:", error);
+      setErroEndereco("Erro ao carregar endereço do cliente.");
+    } finally {
+      setCarregandoEndereco(false);
+    }
+  };
+
+    // Mapeia EstoqueResponseDTO do backend para formato usado na tabela do frontend
+    // Backend retorna: { quantidade, produtoResponseDTO: { id, nome, preco, imagem, categoriaResponseDTO: { id, nome, descricao } } }
   function mapEstoque(e: any) {
     return {
-      id: e.id,
+      id: e.produtoResponseDTO?.id || 0,  // ID do produto (não do estoque) para edição
       quantidade: e.quantidade,
-      produto_id: e.produtoResponseDTO.id,
-      produto: e.produtoResponseDTO.nome,
-      preco: e.produtoResponseDTO.preco,
-      imagem: e.produtoResponseDTO.imagem,
-      categoria: e.produtoResponseDTO.categoriaResponseDTO.nome
+      produto_id: e.produtoResponseDTO?.id || 0,
+      produto: e.produtoResponseDTO?.nome || "Produto não encontrado",
+      preco: e.produtoResponseDTO?.preco || 0,
+      imagem: e.produtoResponseDTO?.imagem || "",
+      categoria: e.produtoResponseDTO?.categoriaResponseDTO?.nome || "Sem categoria"
     };
   }
+
+  const categoriaColors = [
+    "#FF7A00",
+    "#1E88E5",
+    "#43A047",
+    "#E53935",
+    "#8E24AA",
+    "#00897B",
+    "#F4511E",
+    "#3949AB",
+  ];
+
+  const getCategoriaColor = (index: number) => {
+    if (index < categoriaColors.length) return categoriaColors[index];
+    const hue = (index * 57) % 360;
+    return `hsl(${hue}, 70%, 45%)`;
+  };
+
+  const getNomeClientePedido = (pedido: any) => {
+    return pedido?.usuarioResponseDTO?.nome ?? pedido?.nome_cliente ?? "Cliente não informado";
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === "PROCESSANDO" || status === "PENDENTE") return "#FF7A00";
+    if (status === "CANCELADO" || status === "Cancelado") return "#f44336";
+    return "green";
+  };
+
+  const abrirModalClientePedido = (pedido: any) => {
+    setPedidoClienteModal(pedido);
+  };
+
+  const abrirModalProdutosPedido = (pedido: any) => {
+    setPedidoProdutosModal(pedido);
+  };
   
 
   return (
@@ -506,12 +612,12 @@ export default function Produtos() {
               <input
                 className={styles.inputGroup}
                 type="number"
-                placeholder="Quantidade Disponível"
+                placeholder="Quantidade"
                 value={formCadastrar.quantidade}
                 onChange={(e) =>
                   setFormCadastrar({
                     ...formCadastrar,
-                    quantidade: Number(e.target.value),
+                    quantidade: e.target.value,
                   })
                 }
               />
@@ -527,13 +633,15 @@ export default function Produtos() {
               />
               <input
                 className={styles.inputGroup}
-                type="text"
-                placeholder="R$ 123,45"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Preço"
                 value={formCadastrar.preco}
                 onChange={(e) =>
                   setFormCadastrar({ 
                     ...formCadastrar, 
-                    preco: Number(e.target.value)
+                    preco: e.target.value
                   })
                 }
                 required
@@ -599,12 +707,12 @@ export default function Produtos() {
               <input
                 type="text"
                 className={styles.inputGroup}
-                placeholder="R$ 123,45"
+                placeholder="Preço"
                 value={formEditar.preco}
                 onChange={(e) =>
                   setFormEditar({ 
                     ...formEditar, 
-                    preco: Number(e.target.value) })
+                    preco: e.target.value })
                 }
                 required
               />
@@ -711,7 +819,7 @@ export default function Produtos() {
                         fontWeight: "normal",
                       }}
                     >
-                      ({e.produto})
+                      ({e.categoria ?? "Sem categoria"})
                     </span>
                   </td>
                   <td>
@@ -720,11 +828,15 @@ export default function Produtos() {
                         type="number"
                         className={styles.inputGroup}
                         style={{ width: "80px", margin: 0 }}
-                        value={e.quantidade}
+                        value={formEstoque.quantidade}
+                        autoFocus
                         onChange={(ev) =>
                           setFormEstoque({
                             ...formEstoque,
-                            quantidade: parseInt(ev.target.value),
+                            quantidade:
+                              ev.target.value === ""
+                                ? 0
+                                : Number(ev.target.value),
                           })
                         }
                       />
@@ -777,7 +889,7 @@ export default function Produtos() {
                         className={styles.btnAcao}
                         style={{ width: "80px", padding: "5px 10px" }}
                       >
-                        Alterar Quantidade
+                        Alterar Estoque
                       </button>
                     )}
                   </td>
@@ -787,6 +899,7 @@ export default function Produtos() {
           </table>
         </section>
 
+        {/* TABELA DE CATEGORIAS */}
         <section
           id="secao-categorias"
           className={`${styles.card} ${styles.secaoListaCard}`}
@@ -803,21 +916,37 @@ export default function Produtos() {
           <table className={styles.tabelaContainer}>
             <thead>
               <tr>
-                <th>ID</th>
+                <th></th>
                 <th>Categoria</th>
+                <th>Descrição</th>
               </tr>
             </thead>
             <tbody>
               {categorias.length > 0 ? (
-                categorias.map((categoria) => (
+                categorias.map((categoria, index) => (
                   <tr key={categoria.id}>
-                    <td>#{categoria.id}</td>
+                    <td>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: "12px",
+                          height: "12px",
+                          borderRadius: "50%",
+                          backgroundColor: getCategoriaColor(index),
+                        }}
+                        aria-label={`Categoria ${categoria.nome}`}
+                        title={categoria.nome}
+                      />
+                    </td>
                     <td>{categoria.nome}</td>
+                    <td style={{ textAlign: "left" }}>
+                      {categoria.descricao || "Sem descrição"}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={2} style={{ textAlign: "center", color: "#757575" }}>
+                  <td colSpan={3} style={{ textAlign: "center", color: "#757575" }}>
                     Nenhuma categoria encontrada.
                   </td>
                 </tr>
@@ -826,6 +955,7 @@ export default function Produtos() {
           </table>
         </section>
 
+        {/* TABELA DE CLIENTES */}
         <section
           id="secao-clientes"
           className={`${styles.card} ${styles.secaoListaCard}`}
@@ -844,21 +974,17 @@ export default function Produtos() {
               <tr>
                 <th>Nome</th>
                 <th>E-mail</th>
-                <th>Cidade</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {clientes.map((c, index) => (
-                <tr key={index}>
-                  <td>{c.name}</td>
-                  <td>{c.email}</td>
-                  <td>
-                    {/* {c.address.city} - {c.address.state} */}
-                  </td>
+              {clientes.map((c, id) => (
+                <tr key={c.id ?? id}>
+                  <td>{c.nome ?? "-"}</td>
+                  <td>{c.email ?? "-"}</td>
                   <td>
                     <button
-                      onClick={() => setClienteSelecionado(c)}
+                      onClick={() => abrirEnderecoCliente(c)}
                       className={styles.btnAcao}
                       style={{ width: "100%" }}
                     >
@@ -871,6 +997,7 @@ export default function Produtos() {
           </table>
         </section>
 
+        {/* TABELA DE PEDIDOS */}
         <section
           id="secao-pedidos"
           className={`${styles.card} ${styles.secaoListaCard}`}
@@ -918,6 +1045,7 @@ export default function Produtos() {
           </div>
         </section>
 
+        {/* TABELA DE PEDIDOS FEITOS */}
         <section
           id="tabela-pedidos"
           className={`${styles.card} ${styles.secaoListaCard}`}
@@ -970,7 +1098,7 @@ export default function Produtos() {
               >
                 R${" "}
                 {pedidosOriginais
-                  .reduce((acc, p) => acc + parseFloat(p.valor_total), 0)
+                  .reduce((acc, p) => acc + Number(p.valorTotal ?? p.valor_total ?? 0), 0)
                   .toFixed(2)}
               </p>
             </div>
@@ -982,7 +1110,11 @@ export default function Produtos() {
             <button
               className={styles.btnAcao}
               onClick={() =>
-                setPedidos(pedidos.filter((p) => p.status === "Pendente"))
+                setPedidos(
+                  pedidos.filter(
+                    (p) => p.status === "PROCESSANDO" || p.status === "PENDENTE",
+                  ),
+                )
               }
             >
               A Preparar
@@ -1003,36 +1135,52 @@ export default function Produtos() {
               {pedidos.map((p) => (
                 <tr key={p.id}>
                   <td>#{p.id}</td>
-                  <td>{p.nome_cliente}</td>
                   <td>
-                    <div style={{ textAlign: "left", fontSize: "12px" }}>
-                      {p.itens ? (
-                        p.itens.map((item: any, idx: number) => (
-                          <div key={idx}>
-                            {item.quantidade}x {item.nome}
-                          </div>
-                        ))
-                      ) : (
-                        <span style={{ color: "#999", fontStyle: "italic" }}>
-                          Pedido antigo (sem itens)
-                        </span>
-                      )}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <button
+                        className={styles.btnAcao}
+                        style={{ padding: "5px 8px" }}
+                        onClick={() => abrirModalClientePedido(p)}
+                      >
+                        Ver
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <button
+                        className={styles.btnAcao}
+                        style={{ padding: "5px 8px" }}
+                        onClick={() => abrirModalProdutosPedido(p)}
+                      >
+                        Ver
+                      </button>
                     </div>
                   </td>
                   <td
                     style={{
                       fontWeight: "bold",
-                      color:
-                        p.status === "Pendente"
-                          ? "#FF7A00"
-                          : p.status === "Cancelado"
-                            ? "#f44336"
-                            : "green",
+                      color: getStatusColor(p.status),
                     }}
                   >
                     {p.status}
                   </td>
-                  <td>R$ {p.valor_total}</td>
+                  <td>
+                    <div>R$ {Number(p.valorTotal ?? 0).toFixed(2)}</div>
+                    <div style={{ fontSize: "10px", color: "#757575" }}>Valor total</div>
+                  </td>
                   <td>
                     <div
                       style={{
@@ -1085,10 +1233,18 @@ export default function Produtos() {
               <button
                 className={styles.btnAcao}
                 onClick={() => {
+                  const normalizarTexto = (texto: string) =>
+                    texto
+                      .normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/ç/g, "c")
+                      .replace(/Ç/g, "C")
+                      .toLowerCase();
+
                   const filtrados = pedidos.filter((p) =>
-                    p.nome_cliente
-                      .toLowerCase()
-                      .includes(termoBusca.toLowerCase()),
+                    normalizarTexto(getNomeClientePedido(p)).includes(
+                      normalizarTexto(termoBusca),
+                    ),
                   );
                   setPedidos(filtrados);
                   setMostrarModalBusca(false);
@@ -1112,6 +1268,93 @@ export default function Produtos() {
         </div>
       )}
 
+      {pedidoClienteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalConteudo}>
+            <img
+              src="/icone-GB.png"
+              alt="Cliente do pedido"
+              className={styles.logoCard}
+            />
+            <h3>Cliente do Pedido #{pedidoClienteModal.id}</h3>
+            <div style={{ textAlign: "left", margin: "15px 0", fontSize: "14px" }}>
+              <p>
+                <strong>Nome:</strong>{" "}
+                {pedidoClienteModal.usuarioResponseDTO?.nome ?? "-"}
+              </p>
+              <p>
+                <strong>E-mail:</strong>{" "}
+                {pedidoClienteModal.usuarioResponseDTO?.email ?? "-"}
+              </p>
+              <p>
+                <strong>Rua:</strong>{" "}
+                {pedidoClienteModal.endereco?.street ?? "-"}
+              </p>
+              <p>
+                <strong>Bairro:</strong>{" "}
+                {pedidoClienteModal.endereco?.neighborhood ?? "-"}
+              </p>
+              <p>
+                <strong>Número:</strong>{" "}
+                {pedidoClienteModal.endereco?.number ?? "-"}
+              </p>
+              <p>
+                <strong>Cidade/UF:</strong>{" "}
+                {pedidoClienteModal.endereco?.city ?? "-"}/{pedidoClienteModal.endereco?.state ?? "-"}
+              </p>
+              <p>
+                <strong>CEP:</strong>{" "}
+                {pedidoClienteModal.endereco?.cep ?? "-"}
+              </p>
+            </div>
+            <button className={styles.btnAcao} onClick={() => setPedidoClienteModal(null)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {pedidoProdutosModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalConteudo}>
+            <img
+              src="/icone-GB.png"
+              alt="Produtos do pedido"
+              className={styles.logoCard}
+            />
+            <h3>Produtos do Pedido #{pedidoProdutosModal.id}</h3>
+            <div style={{ textAlign: "left", margin: "15px 0", fontSize: "14px", maxHeight: "260px", overflowY: "auto" }}>
+              {Array.isArray(pedidoProdutosModal.itens) && pedidoProdutosModal.itens.length > 0 ? (
+                pedidoProdutosModal.itens.map((item: any, idx: number) => (
+                  <div
+                    key={item.id ?? idx}
+                    style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #e0e0e0" }}
+                  >
+                    <p>
+                      <strong>Produto:</strong> {item?.produto?.nome ?? "-"}
+                    </p>
+                    <p>
+                      <strong>Descrição:</strong> {item?.produto?.descricao || "Sem descrição"}
+                    </p>
+                    <p>
+                      <strong>Quantidade:</strong> {item?.quantidade ?? 0}
+                    </p>
+                    <p>
+                      <strong>Preço Unitário:</strong> R$ {Number(item?.precoUnitario ?? 0).toFixed(2)}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p>Nenhum produto encontrado neste pedido.</p>
+              )}
+            </div>
+            <button className={styles.btnAcao} onClick={() => setPedidoProdutosModal(null)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
       {clienteSelecionado && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalConteudo}>
@@ -1120,32 +1363,52 @@ export default function Produtos() {
               alt="GeekBay"
               className={styles.logoCard}
             />
-            <h3>Endereço de {clienteSelecionado.name}</h3>
-            <div
-              style={{ textAlign: "left", margin: "15px 0", fontSize: "14px" }}
-            >
-              <p>
-                <strong>Rua:</strong> {clienteSelecionado.address.street},{" "}
-                {clienteSelecionado.address.number}
+            <h3>Endereço de {clienteSelecionado.nome}</h3>
+            {clienteSelecionado.email && (
+              <p style={{ marginTop: "8px", color: "#555" }}>
+                {clienteSelecionado.email}
               </p>
-              <p>
-                <strong>Bairro:</strong>{" "}
-                {clienteSelecionado.address.neighborhood}
-              </p>
-              <p>
-                <strong>Cidade/UF:</strong> {clienteSelecionado.address.city}/
-                {clienteSelecionado.address.state}
-              </p>
-              <p>
-                <strong>CEP:</strong> {clienteSelecionado.address.zip_code}
-              </p>
-              <p>
-                <strong>Obs:</strong> {clienteSelecionado.address.complement}
-              </p>
-            </div>
+            )}
+            {carregandoEndereco ? (
+              <p style={{ margin: "15px 0" }}>Carregando endereço...</p>
+            ) : erroEndereco ? (
+              <p style={{ margin: "15px 0", color: "#f44336" }}>{erroEndereco}</p>
+            ) : enderecoSelecionado ? (
+              <div
+                style={{ textAlign: "left", margin: "15px 0", fontSize: "14px" }}
+              >
+                <p>
+                  <strong>Rua:</strong>{" "}
+                  {enderecoSelecionado.street ?? "-"}, {enderecoSelecionado.number ?? "-"}
+                </p>
+                <p>
+                  <strong>Bairro:</strong>{" "}
+                  {enderecoSelecionado.neighborhood ?? "-"}
+                </p>
+                <p>
+                  <strong>Cidade/UF:</strong>{" "}
+                  {enderecoSelecionado.city ?? "-"}/{enderecoSelecionado.state ?? "-"}
+                </p>
+                <p>
+                  <strong>CEP:</strong>{" "}
+                  {enderecoSelecionado.cep ?? "-"}
+                </p>
+                <p>
+                  <strong>Obs:</strong>{" "}
+                  {enderecoSelecionado.complement ?? "-"}
+                </p>
+              </div>
+            ) : (
+              <p style={{ margin: "15px 0" }}>Nenhum endereço encontrado.</p>
+            )}
             <button
               className={styles.btnAcao}
-              onClick={() => setClienteSelecionado(null)}
+              onClick={() => {
+                setClienteSelecionado(null);
+                setEnderecoSelecionado(null);
+                setErroEndereco("");
+                setCarregandoEndereco(false);
+              }}
             >
               Fechar
             </button>

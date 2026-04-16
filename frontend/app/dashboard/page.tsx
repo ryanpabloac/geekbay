@@ -21,11 +21,13 @@ import Link from "next/link";
 export default function DashboardPage() {
   const [pedidos, setPedidos] = useState<any[]>([]);
 
+  // Carrega pedidos do backend Spring Boot - Endpoint: GET /api/pedidos
+  // Retorna lista de PedidoResponseDTO: { id, dataPedido, status, valorTotal, valorFrete, endereco, usuarioResponseDTO, itens }
   useEffect(() => {
-    fetch("http://localhost:5000/pedidos")
+    fetch("http://localhost:8080/api/pedidos")
       .then((res) => res.json())
       .then((dados) => setPedidos(dados))
-      .catch((err) => console.error("Erro ao carregar pedidos:", err));
+      .catch((err) => console.error("Erro ao carregar pedidos do backend:", err));
   }, []);
 
   const CORES_PIZZA = ["#FF7A00", "#2196F3", "#4CAF50", "#FFC107"];
