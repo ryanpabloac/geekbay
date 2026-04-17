@@ -5,15 +5,6 @@ import styles from '../styles/Home.module.css';
 
 export default function Home() {
 
-
-const rolarParaSecao = (id: string) => {
-  const elemento = document.getElementById(id);
-  if (elemento) {
-    elemento.scrollIntoView({ behavior: 'smooth' });
-  }
-};
-
-
   return (
     <div className={styles.corpo } style={{backgroundImage: 'url("/bg-GeekBay.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', minHeight: '100vh', width: '100%'}}>
       <header className={styles.cabecalho}>
@@ -32,25 +23,25 @@ const rolarParaSecao = (id: string) => {
             O seu portal administrativo para gerenciar o estoque da melhor loja geek de Uberlândia.
           </p>
 
-          <Link href="/produtos" style={{ textDecoration: 'none' }} >
-            <button className={styles.btnAcao} style={{width: '100%', fontSize: '18px'}} onClick={() => rolarParaSecao('secao-produtos')}>
+          <Link href="/produtos#secao-produtos" style={{ textDecoration: 'none' }} >
+            <button className={styles.btnAcao} style={{width: '100%', fontSize: '18px'}}>
               Gerenciar Produtos
             </button>
           </Link>
           <Link href="/produtos#secao-estoque" style={{ textDecoration: 'none' }} >
-            <button className={styles.btnAcao} style={{width: '100%', fontSize: '18px'}} onClick={() => rolarParaSecao('secao-clientes')}>
+            <button className={styles.btnAcao} style={{width: '100%', fontSize: '18px'}}>
               Gerenciar Estoque
             </button>
             </Link>
             
             <Link href="/produtos#secao-clientes" style={{ textDecoration: 'none' }}>
-              <button className={styles.btnAcao} style={{ width: '100%', fontSize: '18px' }} onClick={() => rolarParaSecao('secao-estoque')}>
+              <button className={styles.btnAcao} style={{ width: '100%', fontSize: '18px' }}>
                 Gerenciar Clientes
               </button>
             </Link>
             
             <Link href="/produtos#secao-pedidos" style={{ textDecoration: 'none' }} >
-            <button className={styles.btnAcao} style={{width: '100%', fontSize: '18px'}} onClick={() => rolarParaSecao('secao-pedidos')}>
+            <button className={styles.btnAcao} style={{width: '100%', fontSize: '18px'}}>
               Gerenciar Pedidos
             </button>
           </Link>

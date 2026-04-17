@@ -728,7 +728,10 @@ export default function Produtos() {
         </div>
 
         {/* LISTA DE PRODUTOS */}
-        <section className={`${styles.card} ${styles.secaoListaCard}`}>
+        <section
+          id="secao-produtos"
+          className={`${styles.card} ${styles.secaoListaCard}`}
+        >
           <div className={styles.cardTituloImg}>
             <img src="/icone-GB.png" alt="Lista" className={styles.logoCard} />
             <h2>Lista de Produtos</h2>

@@ -8,6 +8,70 @@
   margin-bottom: 40px;
 }
 
+.listaCategoriasProdutos {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.secaoCategoriaProdutos {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cabecalhoCategoria {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid transparent;
+}
+
+.bolinhaCategoria {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.tituloCategoria {
+  margin: 0;
+  font-family: var(--font-orbitron);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: #ff7a00;
+}
+
+.gradeProdutos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px;
+}
+
+.nomeProdutoLinha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 30px;
+  margin-top: 15px;
+}
+
+.bolinhaCategoriaProduto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
 .corpo {
   background-color: #757575;
   width: 100%;
