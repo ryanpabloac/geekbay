@@ -18,14 +18,80 @@ import {
 import styles from "../../styles/Home.module.css";
 import Link from "next/link";
 
-export default function DashboardPage() {
-  const [pedidos, setPedidos] = useState<any[]>([]);
+type PedidoItemDTO = {
+  id: number;
+  quantidade: number;
+  precoUnitario: number;
+  produto?: {
+    id: number;
+    nome: string;
+    descricao?: string;
+    preco?: number;
+    imagem?: string;
+    ativo?: boolean;
+    categoriaResponseDTO?: {
+      id: number;
+      nome: string;
+    };
+  };
+};
 
+type PedidoDTO = {
+  id: number;
+  dataPedido?: string;
+  status?: string;
+  valorTotal?: number;
+  valorFrete?: number;
+  itens?: PedidoItemDTO[];
+};
+
+const normalizarListaPedidos = (payload: unknown): PedidoDTO[] => {
+  if (Array.isArray(payload)) return payload as PedidoDTO[];
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    Array.isArray((payload as { content?: unknown[] }).content)
+  ) {
+    return (payload as { content: PedidoDTO[] }).content;
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    Array.isArray((payload as { pedidos?: unknown[] }).pedidos)
+  ) {
+    return (payload as { pedidos: PedidoDTO[] }).pedidos;
+  }
+
+  return [];
+};
+
+const toNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatarData = (isoDate?: string): string => {
+  if (!isoDate) return "Sem data";
+  const parsed = new Date(isoDate);
+  if (Number.isNaN(parsed.getTime())) return "Sem data";
+  return parsed.toLocaleDateString("pt-BR");
+};
+
+export default function DashboardPage() {
+  const [pedidos, setPedidos] = useState<PedidoDTO[]>([]);
+
+  // Carrega pedidos do backend Spring Boot - Endpoint: GET /api/pedidos
+  // Retorna lista de PedidoResponseDTO: { id, dataPedido, status, valorTotal, valorFrete, endereco, usuarioResponseDTO, itens }
   useEffect(() => {
-    fetch("http://localhost:5000/pedidos")
-      .then((res) => res.json())
-      .then((dados) => setPedidos(dados))
-      .catch((err) => console.error("Erro ao carregar pedidos:", err));
+    fetch("http://localhost:8080/api/pedidos")
+      .then((res) => {
+        if (!res.ok) throw new Error("Falha ao carregar pedidos");
+        return res.json();
+      })
+      .then((dados) => setPedidos(normalizarListaPedidos(dados)))
+      .catch((err) => console.error("Erro ao carregar pedidos do backend:", err));
   }, []);
 
   const CORES_PIZZA = ["#FF7A00", "#2196F3", "#4CAF50", "#FFC107"];
@@ -34,7 +100,7 @@ export default function DashboardPage() {
 
   // Cálculos dos Cards Superiores
   const faturamentoTotal = pedidos.reduce(
-    (acc, p) => acc + parseFloat(p.valor_total || 0),
+    (acc, p) => acc + toNumber(p.valorTotal),
     0,
   );
   const ticketMedio =
@@ -42,15 +108,15 @@ export default function DashboardPage() {
 
   // Gráfico de Pizza
   const dadosProdutosPizza = Object.values(
-    pedidos.reduce((acc: any, p: any) => {
+    pedidos.reduce((acc: Record<string, { name: string; value: number }>, p) => {
       if (p.itens && Array.isArray(p.itens)) {
-        p.itens.forEach((item: any) => {
-          const cat = item.categoria ? item.categoria.trim() : "Sem Categoria";
+        p.itens.forEach((item) => {
+          const nomeProduto = item?.produto?.nome?.trim() || "Produto sem nome";
 
-          if (!acc[cat]) {
-            acc[cat] = { name: cat, value: 0 };
+          if (!acc[nomeProduto]) {
+            acc[nomeProduto] = { name: nomeProduto, value: 0 };
           }
-          acc[cat].value += Number(item.quantidade || 1);
+          acc[nomeProduto].value += toNumber(item.quantidade || 1);
         });
       }
       return acc;
@@ -58,25 +124,30 @@ export default function DashboardPage() {
   );
   // Gráfico de Linha
   const dadosVendasPeriodo = Object.values(
-    pedidos.reduce((acc: any, p: any) => {
-      const data = p.data_pedido || "Sem data";
-      if (!acc[data]) acc[data] = { data, total: 0 };
-      acc[data].total += parseFloat(p.valor_total || 0);
+    pedidos.reduce((acc: Record<string, { data: string; total: number; timestamp: number }>, p) => {
+      const parsedDate = p.dataPedido ? new Date(p.dataPedido) : null;
+      const data = formatarData(p.dataPedido);
+      const timestamp = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.getTime() : 0;
+
+      if (!acc[data]) acc[data] = { data, total: 0, timestamp };
+      acc[data].total += toNumber(p.valorTotal);
       return acc;
     }, {}),
   ).sort(
-    (a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime(),
+    (a, b) => a.timestamp - b.timestamp,
   );
 
   // Gráfico de Barras
   const dadosVendasPedidos = pedidos.slice(-6).map((p) => {
     const nomesProdutos = p.itens
-      ? p.itens.map((i: any) => i.nome).join(", ")
+      ? p.itens
+          .map((i) => i.produto?.nome || `Item #${i.id}`)
+          .join(", ")
       : "Pedido sem itens";
 
     return {
       id: `#${p.id}`,
-      valor: parseFloat(p.valor_total || 0),
+      valor: toNumber(p.valorTotal),
       produtos: nomesProdutos,
     };
   });
@@ -320,7 +391,7 @@ export default function DashboardPage() {
                   marginBottom: "15px",
                 }}
               >
-                Mix de Categorias
+                Mix de Produtos
               </p>
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
