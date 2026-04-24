@@ -4,6 +4,7 @@ import com.geekbay.demo.dtos.endereco.EnderecoRequestDTO;
 import com.geekbay.demo.dtos.endereco.EnderecoResponseDTO;
 import com.geekbay.demo.services.EnderecoService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,11 +21,15 @@ public class EnderecoController {
         return ResponseEntity.ok(this.enderecoService.getEnderecoByCep(cep));
     }
 
+
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<EnderecoResponseDTO> getEnderecoByUsuarioId(@PathVariable Long usuarioId){
         return ResponseEntity.ok(this.enderecoService.getEnderecoByUsuarioId(usuarioId));
     }
 
+
+    @PreAuthorize("isAuthenticated()")
     @PostMapping()
     public ResponseEntity<Void> addNewEnderecoByCep(@RequestBody EnderecoRequestDTO enderecoRequestDTO){
         this.enderecoService.addNewEnderecoByCep(enderecoRequestDTO);

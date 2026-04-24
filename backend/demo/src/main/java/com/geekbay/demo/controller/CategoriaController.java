@@ -3,10 +3,10 @@ package com.geekbay.demo.controller;
 
 import com.geekbay.demo.dtos.categoria.CategoriaRequestDTO;
 import com.geekbay.demo.dtos.categoria.CategoriaResponseDTO;
-import com.geekbay.demo.entities.categoria.Categoria;
 import com.geekbay.demo.services.CategoriaService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +45,7 @@ public class CategoriaController {
 
     // POST
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping()
     public ResponseEntity addNewCategoria(@RequestBody CategoriaRequestDTO categoriaRequestDTO){
         try{
@@ -58,6 +59,7 @@ public class CategoriaController {
 
     // PUT
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity updateCategoriaById(@PathVariable Integer id, @RequestBody CategoriaRequestDTO categoriaRequestDTO){
         try{
@@ -68,6 +70,7 @@ public class CategoriaController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/nome/{nome}")
     public ResponseEntity updateCategoriaByNome(@PathVariable String nome, @RequestBody CategoriaRequestDTO categoriaRequestDTO){
         try{
@@ -80,6 +83,7 @@ public class CategoriaController {
 
     // DELETE
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity deleteCategoriaById(@PathVariable Integer id){
         try{
@@ -90,6 +94,7 @@ public class CategoriaController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/nome/{nome}")
     public ResponseEntity deleteCategoriaByNome(@PathVariable String nome){
         try{

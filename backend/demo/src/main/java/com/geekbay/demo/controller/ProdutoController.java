@@ -6,6 +6,7 @@ import com.geekbay.demo.dtos.produto.ProdutoResponseDTO;
 import com.geekbay.demo.dtos.produto.ProdutoUpdateRequestDTO;
 import com.geekbay.demo.services.ProdutoService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,6 +59,7 @@ public class ProdutoController {
 
     // POST
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping()
     public ResponseEntity addNewProduto(@RequestBody ProdutoRequestDTO produtoRequestDTO){
         try{
@@ -70,6 +72,8 @@ public class ProdutoController {
 
 
     // PUT
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity updateProdutoById(@PathVariable Integer id, @RequestBody ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
@@ -81,6 +85,7 @@ public class ProdutoController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/nome/{nome}")
     public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestBody ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
@@ -94,6 +99,8 @@ public class ProdutoController {
 
 
     // DELETE
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity deleteProdutoById(@PathVariable Integer id){
         try{
@@ -105,6 +112,7 @@ public class ProdutoController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/nome/{nome}")
     public ResponseEntity deleteProdutoByNome(@PathVariable String nome){
         try{
