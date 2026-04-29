@@ -11,7 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,10 +19,12 @@ import java.util.Optional;
 public class ProdutoService {
     private final ProdutoRepository produtoRepository;
     private final CategoriaRepository categoriaRepository;
+    private final ImageService imageService;
 
-    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository){
+    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository, ImageService imageService){
         this.produtoRepository = produtoRepository;
         this.categoriaRepository = categoriaRepository;
+        this.imageService = imageService;
     }
 
 
@@ -58,11 +60,13 @@ public class ProdutoService {
     // POST
 
     // Colocar ativo=true por default
-    public void addNewProduto(ProdutoRequestDTO produtoRequestDTO){
+    public void addNewProduto(ProdutoRequestDTO produtoRequestDTO) throws IOException {
         Optional<Categoria> categoriaAdd = this.categoriaRepository.findById(produtoRequestDTO.categoria_id());
         if(categoriaAdd.isEmpty()) throw new RuntimeException("ID da categoria inválido");
+        String imageS3 = this.imageService.uploadImage(produtoRequestDTO.imagem());
         Produto produtoAdd = new Produto(produtoRequestDTO);
         produtoAdd.setCategoria(categoriaAdd.get());
+        produtoAdd.setImagem(imageS3);
         this.produtoRepository.save(produtoAdd);
     }
 
@@ -70,13 +74,14 @@ public class ProdutoService {
     // PUT
 
     @Transactional
-    public void updateProdutoById(Integer id, ProdutoUpdateRequestDTO produtoRequestDTO){
+    public void updateProdutoById(Integer id, ProdutoUpdateRequestDTO produtoRequestDTO) throws IOException{
         Optional<Produto> produtoQuery = this.produtoRepository.findById(id);
         if(produtoQuery.isEmpty()) throw new RuntimeException("ID inválido ou produto inexistente");
         if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
         if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
         if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
-        if(produtoRequestDTO.imagem() != null) produtoQuery.get().setImagem(produtoRequestDTO.imagem());
+        if(produtoRequestDTO.imagem() != null) produtoQuery.get()
+                .setImagem(this.imageService.uploadImage(produtoRequestDTO.imagem()));
         if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
                 .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());
         if(produtoRequestDTO.ativo() != null) produtoQuery.get().setAtivo(produtoRequestDTO.ativo()); // Isso aqui tava dando erro, Boolean pode ser null, já boolean não pode -> Causa NullPointerException no processo de autounboxing
@@ -84,13 +89,14 @@ public class ProdutoService {
     }
 
     @Transactional
-    public void updateProdutoByNome(String nome, ProdutoUpdateRequestDTO produtoRequestDTO){
+    public void updateProdutoByNome(String nome, ProdutoUpdateRequestDTO produtoRequestDTO) throws IOException{
         Optional<Produto> produtoQuery = filtraProdutoExistentePorNome(nome);
         if(produtoQuery.isEmpty()) throw new RuntimeException("ID inválido ou produto inexistente");
         if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
         if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
         if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
-        if(produtoRequestDTO.imagem() != null) produtoQuery.get().setImagem(produtoRequestDTO.imagem());
+        if(produtoRequestDTO.imagem() != null) produtoQuery.get()
+                .setImagem(this.imageService.uploadImage(produtoRequestDTO.imagem()));
         if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
                 .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());
         if(produtoRequestDTO.ativo() != null) produtoQuery.get().setAtivo(produtoRequestDTO.ativo()); // Isso aqui tava dando erro, Boolean pode ser null, já boolean não pode -> Causa NullPointerException no processo de autounboxing

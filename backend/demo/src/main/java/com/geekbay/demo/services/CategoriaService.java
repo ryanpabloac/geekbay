@@ -33,17 +33,26 @@ public class CategoriaService {
 
     public CategoriaResponseDTO getCategoriaByNome(String nome){
         Optional<Categoria> categoriaQuery = filtraCategoriaExistentePorNome(nome);
-        if(categoriaQuery.isEmpty()) throw new RuntimeException("Nome inválido ou categoria inexistente");
-        return new CategoriaResponseDTO(categoriaQuery.get());
+        if(categoriaQuery.isEmpty()) {
+            Categoria categoriaNova = addNewCategoria(new CategoriaRequestDTO(nome, ""));
+            return new CategoriaResponseDTO(categoriaNova);
+        }
+        else return new CategoriaResponseDTO(categoriaQuery.get());
+        //throw new RuntimeException("Nome inválido ou categoria inexistente");
     }
 
     // POST
 
-    public void addNewCategoria(CategoriaRequestDTO categoriaRequestDTO){
+    public Categoria addNewCategoria(CategoriaRequestDTO categoriaRequestDTO){
+        Categoria newCategoria = new Categoria(categoriaRequestDTO);
+        this.categoriaRepository.save(newCategoria);
+        return newCategoria;
+        /*
         if(
                 filtraCategoriaExistentePorNome(categoriaRequestDTO.nome()).isEmpty()
         ) this.categoriaRepository.save(new Categoria(categoriaRequestDTO));
         else throw new RuntimeException("Categoria já existente");
+        */
     }
 
     // PUT

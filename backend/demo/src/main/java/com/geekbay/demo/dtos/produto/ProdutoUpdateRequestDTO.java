@@ -1,10 +1,12 @@
 package com.geekbay.demo.dtos.produto;
 
+import org.springframework.web.multipart.MultipartFile;
+
 public record ProdutoUpdateRequestDTO(
         String nome,
         String descricao,
         Double preco,
-        String imagem,
+        MultipartFile imagem,
         Integer categoria_id,
         Boolean ativo
 ) {}
