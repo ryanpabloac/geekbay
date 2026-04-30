@@ -6,7 +6,7 @@ public record ProdutoUpdateRequestDTO(
         String nome,
         String descricao,
         Double preco,
-        MultipartFile imagem,
+        //MultipartFile imagem,
         Integer categoria_id,
         Boolean ativo
 ) {}

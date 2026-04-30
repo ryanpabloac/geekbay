@@ -10,7 +10,7 @@ public record ProdutoRequestDTO(
         String descricao,
         @NotNull
         Double preco,
-        MultipartFile imagem,
+        //MultipartFile imagem,
         @NotNull
         Integer categoria_id,
         Boolean ativo

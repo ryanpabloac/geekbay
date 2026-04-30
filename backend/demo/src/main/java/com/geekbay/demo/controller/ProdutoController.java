@@ -64,7 +64,7 @@ public class ProdutoController {
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity addNewProduto(@RequestPart("image") MultipartFile image, @RequestPart("data") ProdutoRequestDTO produtoRequestDTO){
         try{
-            this.produtoService.addNewProduto(produtoRequestDTO);   // Corrigir aqui para mandar a image pra função de processamento
+            this.produtoService.addNewProduto(image, produtoRequestDTO);   // Corrigir aqui para mandar a image pra função de processamento
             return ResponseEntity.ok().build();
         } catch (RuntimeException e){
             return ResponseEntity.badRequest().build();
@@ -78,7 +78,7 @@ public class ProdutoController {
     @PutMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity updateProdutoById(@PathVariable Integer id, @RequestPart("image") MultipartFile image, @RequestPart("data") ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
-            this.produtoService.updateProdutoById(id, produtoRequestDTO); // Corrigir aqui para mandar a image pra função de processamento
+            this.produtoService.updateProdutoById(id, image, produtoRequestDTO); // Corrigir aqui para mandar a image pra função de processamento
             return ResponseEntity.ok().build();
         }
         catch (RuntimeException e){
@@ -92,7 +92,7 @@ public class ProdutoController {
     @PutMapping(value = "/nome/{nome}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestPart("image") MultipartFile image, @RequestPart("data") ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
-            this.produtoService.updateProdutoByNome(nome, produtoRequestDTO); // Corrigir aqui para mandar a image pra função de processamento
+            this.produtoService.updateProdutoByNome(nome, image, produtoRequestDTO); // Corrigir aqui para mandar a image pra função de processamento
             return ResponseEntity.ok().build();
         }
         catch (RuntimeException e){
