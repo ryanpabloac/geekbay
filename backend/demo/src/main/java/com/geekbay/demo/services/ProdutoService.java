@@ -7,6 +7,7 @@ import com.geekbay.demo.entities.categoria.Categoria;
 import com.geekbay.demo.entities.produto.Produto;
 import com.geekbay.demo.repositories.CategoriaRepository;
 import com.geekbay.demo.repositories.ProdutoRepository;
+import com.geekbay.demo.services.image.ImageService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;

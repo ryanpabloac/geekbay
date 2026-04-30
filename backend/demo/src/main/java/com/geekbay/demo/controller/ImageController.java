@@ -1,6 +1,6 @@
 package com.geekbay.demo.controller;
 
-import com.geekbay.demo.services.ImageService;
+import com.geekbay.demo.services.image.ImageService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,10 +25,10 @@ public class ImageController {
             return ResponseEntity.ok().body(this.imageService.uploadImage(image));
         } catch (IOException e) {
             return ResponseEntity.internalServerError().body("Erro imagem ");
-        } /*catch (RuntimeException e){
+        } catch (RuntimeException e){
             System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body("Arquivo não suportado");
-        }*/
+        }
     }
 
 }
