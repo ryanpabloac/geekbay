@@ -82,7 +82,7 @@ public class ProdutoService {
         if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
         if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
         if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
-        if(!image.isEmpty()) produtoQuery.get()
+        if((!image.isEmpty()) && (image != null)) produtoQuery.get()
                 .setImagem(this.imageService.uploadImage(image));
         if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
                 .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());

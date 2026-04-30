@@ -380,6 +380,8 @@ export default function Produtos() {
       formData.append("produto", new Blob([JSON.stringify(produtoDTO)], { type: "application/json" }));
       if (arquivoImagemEdicao) {
         formData.append("imagem", arquivoImagemEdicao);
+      } else{
+        formData.append("imagem", new Blob([]));
       }
 
       const response = await fetch(`http://localhost:8080/api/produto/${formEditar.id}`, {
