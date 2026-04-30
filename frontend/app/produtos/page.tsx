@@ -88,6 +88,11 @@ export default function Produtos() {
   const [arquivoImagemEdicao, setArquivoImagemEdicao] = useState<File | null>(null);
   const [previewEdicao, setPreviewEdicao] = useState<string>("");
 
+  // Modal de visualização de imagem do produto
+  const [imagemModalUrl, setImagemModalUrl] = useState<string>("");
+  const [produtoModal, setProdutoModal] = useState<any>(null);
+  const [carregandoImagemModal, setCarregandoImagemModal] = useState(false);
+
     // Cadastro de produto
   const [formCadastrar, setFormCadastrar] = useState({
     categoria: "",
@@ -353,6 +358,36 @@ export default function Produtos() {
     setArquivoImagemEdicao(null);
     setPreviewEdicao("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Visualizar imagem via API que faz proxy S3
+  const visualizarImagem = async (produto: any) => {
+    if (!produto?.imagem) {
+      setMensagemModal("Produto sem imagem.");
+      return;
+    }
+    setCarregandoImagemModal(true);
+    try {
+      const urlParam = encodeURIComponent(produto.imagem);
+      const response = await fetch(`http://localhost:8080/image/${urlParam}`);
+      if (!response.ok) throw new Error("Falha ao carregar imagem");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      if (imagemModalUrl) URL.revokeObjectURL(imagemModalUrl);
+      setImagemModalUrl(blobUrl);
+      setProdutoModal(produto);
+    } catch (error) {
+      console.error("Erro ao carregar imagem:", error);
+      setMensagemModal("Erro ao carregar imagem do produto.");
+    } finally {
+      setCarregandoImagemModal(false);
+    }
+  };
+
+  const fecharModalImagem = () => {
+    if (imagemModalUrl) URL.revokeObjectURL(imagemModalUrl);
+    setImagemModalUrl("");
+    setProdutoModal(null);
   };
 
     // Salvar edição do produto - Endpoint: PUT /api/produto/{id}
@@ -814,18 +849,17 @@ export default function Produtos() {
               {produtos.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    {p.imagem ? (
-                      <a
-                        href={p.imagem}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ fontSize: "10px", color: "#FF7A00" }}
-                      >
-                        Ver Foto
-                      </a>
-                    ) : (
-                      <span style={{ fontSize: "10px" }}>Sem Foto</span>
-                    )}
+                      {p.imagem ? (
+                        <button
+                          onClick={() => visualizarImagem(p)}
+                          className={styles.btnAcao}
+                          style={{ fontSize: "10px", color: "#FF7A00", padding: "4px 8px" }}
+                        >
+                          Ver Foto
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: "10px" }}>Sem Foto</span>
+                      )}
                   </td>
                   <td>{p.nome}</td>
                   <td>{p.preco}</td>
@@ -1281,6 +1315,32 @@ export default function Produtos() {
       </main>
 
       {/* MODAIS  */}
+      {imagemModalUrl && produtoModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalConteudo} style={{ maxWidth: "900px", display: "flex", gap: "20px", alignItems: "flex-start" }}>
+            <div style={{ flex: "0 0 360px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <img
+                src={imagemModalUrl}
+                alt={produtoModal.nome}
+                style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", borderRadius: "8px" }}
+              />
+            </div>
+            <div style={{ flex: 1, textAlign: "left" }}>
+              <h3 style={{ marginTop: 0 }}>{produtoModal.nome}</h3>
+              <p><strong>Preço:</strong> R$ {Number(produtoModal.preco ?? 0).toFixed(2)}</p>
+              <p><strong>Categoria:</strong> {produtoModal.categoriaResponseDTO?.nome ?? produtoModal.categoria ?? "-"}</p>
+              <p><strong>Descrição:</strong> {produtoModal.descricao ?? "Sem descrição"}</p>
+              <p><strong>ID:</strong> {produtoModal.id}</p>
+              <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+                <button className={styles.btnAcao} onClick={fecharModalImagem}>Fechar</button>
+                <a href={produtoModal.imagem} target="_blank" rel="noreferrer" className={styles.btnAcao} style={{ textDecoration: "none" }}>
+                  Abrir original
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {mostrarModalBusca && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalConteudo}>

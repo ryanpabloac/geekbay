@@ -1,15 +1,16 @@
 package com.geekbay.demo.controller;
 
 import com.geekbay.demo.services.image.ImageService;
+import org.apache.coyote.Response;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Optional;
 
 @RequestMapping("/image")
 @RestController
@@ -28,6 +29,16 @@ public class ImageController {
         } catch (RuntimeException e){
             System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body("Arquivo não suportado");
+        }
+    }
+
+    @GetMapping("/{imageURL}")
+    public ResponseEntity<OutputStream> getImage(@PathVariable String imageURL){
+        try{
+            return ResponseEntity.ok(this.imageService.getImage(imageURL));
+        } catch (IOException e){
+            System.out.println("Erro na busca da imagem");
+            return ResponseEntity.badRequest().build();
         }
     }
 

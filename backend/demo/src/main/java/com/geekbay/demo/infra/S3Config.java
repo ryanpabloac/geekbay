@@ -2,15 +2,23 @@ package com.geekbay.demo.infra;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.*;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-import java.io.File;
+import java.io.*;
+import java.time.Duration;
 
 @Component
 public class S3Config {
@@ -45,6 +53,25 @@ public class S3Config {
         this.client.putObject(request, RequestBody.fromBytes(image));
 
         return "http://" + bucketName + ".s3." + this.region + ".amazonaws.com/" +  imageName;
+    }
+
+    public OutputStream getImage(String objectS3Url) throws IOException {
+
+        GetObjectRequest request = GetObjectRequest.builder()
+                .key(getObjectKeyFromS3Url(objectS3Url))
+                .bucket(bucketName)
+                .build();
+
+        ResponseInputStream<GetObjectResponse> response = this.client.getObject(request);
+
+        OutputStream file = new FileOutputStream("ImagemProduto");
+        file.write(response.readAllBytes());
+
+        return file;
+    }
+
+    public String getObjectKeyFromS3Url(String url){
+        return url.replaceAll(("s3://" + bucketName + "/"), "");
     }
 
 

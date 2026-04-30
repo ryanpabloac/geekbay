@@ -5,10 +5,7 @@ import com.geekbay.demo.infra.S3Config;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.UUID;
 
 @Service
@@ -28,6 +25,11 @@ public class ImageService {
 
         return this.s3Config.uploadImage(file, UUID.randomUUID().toString());
     }
+
+    public OutputStream getImage(String objectS3Url) throws IOException{
+        return this.s3Config.getImage(objectS3Url);
+    }
+
 
     public MagicBytes detectType(MultipartFile image) throws IOException{
         for(MagicBytes type: MagicBytes.values()){
