@@ -62,7 +62,7 @@ public class ProdutoController {
     // POST
 
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity addNewProduto(@RequestPart("image") MultipartFile image, @RequestPart("data") ProdutoRequestDTO produtoRequestDTO){
+    public ResponseEntity addNewProduto(@RequestPart("imagem") MultipartFile image, @RequestPart("produto") ProdutoRequestDTO produtoRequestDTO){
         try{
             this.produtoService.addNewProduto(image, produtoRequestDTO);   // Corrigir aqui para mandar a image pra função de processamento
             return ResponseEntity.ok().build();
@@ -76,7 +76,7 @@ public class ProdutoController {
 
     // PUT
     @PutMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity updateProdutoById(@PathVariable Integer id, @RequestPart("image") MultipartFile image, @RequestPart("data") ProdutoUpdateRequestDTO produtoRequestDTO){
+    public ResponseEntity updateProdutoById(@PathVariable Integer id, @RequestPart(value = "imagem", required = false) MultipartFile image, @RequestPart("produto") ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
             this.produtoService.updateProdutoById(id, image, produtoRequestDTO); // Corrigir aqui para mandar a image pra função de processamento
             return ResponseEntity.ok().build();
@@ -90,7 +90,7 @@ public class ProdutoController {
     }
 
     @PutMapping(value = "/nome/{nome}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestPart("image") MultipartFile image, @RequestPart("data") ProdutoUpdateRequestDTO produtoRequestDTO){
+    public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestPart(value = "imagem", required = false) MultipartFile image, @RequestPart("produto") ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
             this.produtoService.updateProdutoByNome(nome, image, produtoRequestDTO); // Corrigir aqui para mandar a image pra função de processamento
             return ResponseEntity.ok().build();

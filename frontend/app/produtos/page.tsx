@@ -82,6 +82,12 @@ export default function Produtos() {
     quantidade: 0,
   });
 
+  // Estados para upload de imagem
+  const [arquivoImagemCadastro, setArquivoImagemCadastro] = useState<File | null>(null);
+  const [previewCadastro, setPreviewCadastro] = useState<string>("");
+  const [arquivoImagemEdicao, setArquivoImagemEdicao] = useState<File | null>(null);
+  const [previewEdicao, setPreviewEdicao] = useState<string>("");
+
     // Cadastro de produto
   const [formCadastrar, setFormCadastrar] = useState({
     categoria: "",
@@ -101,6 +107,47 @@ export default function Produtos() {
     imagem: "",
     quantidade: 0,
   });
+
+  // Handlers para seleção de arquivo de imagem
+  const handleSelecionarImagemCadastro = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    if (arquivo) {
+      const extensoesValidas = ["image/jpeg", "image/png"];
+      if (!extensoesValidas.includes(arquivo.type)) {
+        setMensagemModal("Por favor, selecione um arquivo JPEG, JPG ou PNG.");
+        return;
+      }
+
+      setArquivoImagemCadastro(arquivo);
+
+      // Gerar preview
+      const leitor = new FileReader();
+      leitor.onload = (ev) => {
+        setPreviewCadastro(ev.target?.result as string);
+      };
+      leitor.readAsDataURL(arquivo);
+    }
+  };
+
+  const handleSelecionarImagemEdicao = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    if (arquivo) {
+      const extensoesValidas = ["image/jpeg", "image/png"];
+      if (!extensoesValidas.includes(arquivo.type)) {
+        setMensagemModal("Por favor, selecione um arquivo JPEG, JPG ou PNG.");
+        return;
+      }
+
+      setArquivoImagemEdicao(arquivo);
+
+      // Gerar preview
+      const leitor = new FileReader();
+      leitor.onload = (ev) => {
+        setPreviewEdicao(ev.target?.result as string);
+      };
+      leitor.readAsDataURL(arquivo);
+    }
+  };
 
   useEffect(() => {
     listarTodos();
@@ -215,37 +262,49 @@ export default function Produtos() {
   };
 
     // Cadastrar produto - Endpoint: POST /api/produto
-    // Backend espera ProdutoRequestDTO: { nome, descricao, preco, imagem, categoria_id, ativo }
+    // Backend espera Multipart form-data com @RequestPart: produto (JSON do DTO) e imagem (MultipartFile)
   const handleCadastrar = async (e: any) => {
     e.preventDefault();
+
+    if (!arquivoImagemCadastro) {
+      setMensagemModal("Por favor, selecione uma imagem.");
+      return;
+    }
+
     try {
       // 1. Busca categoria pelo nome para obter o ID
       const responseCategoria = await fetch(`http://localhost:8080/api/categoria/nome/${formCadastrar.categoria}`);
       if(!responseCategoria.ok) throw new Error("Categoria inexistente");
      
-        const categoria = await responseCategoria.json();
+      const categoria = await responseCategoria.json();
       
-      // 2. Cria produto com DTO compatível com backend
+      // 2. Cria DTO do produto como JSON
+      const produtoDTO = {
+        nome: formCadastrar.nome,
+        descricao: "",
+        preco: Number(formCadastrar.preco),
+        categoria_id: categoria.id,
+        ativo: true
+      };
+
+      // 3. Cria FormData com JSON como @RequestPart e arquivo separado
+      const formData = new FormData();
+      formData.append("produto", new Blob([JSON.stringify(produtoDTO)], { type: "application/json" }));
+      formData.append("imagem", arquivoImagemCadastro);
+
       const responseProduto = await fetch("http://localhost:8080/api/produto", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: formCadastrar.nome,
-          descricao: "",  // Campo obrigatório no backend, mas não usado no frontend
-          preco: Number(formCadastrar.preco),
-          imagem: formCadastrar.imagem || "",
-          categoria_id: categoria.id,
-          ativo: true  // Produto nasce ativo por padrão
-        }),
+        body: formData, // FormData será enviado como multipart/form-data automaticamente
       });
+
       if (!responseProduto.ok) throw new Error("Erro no cadastro do produto");
 
-      // 3. Busca produto cadastrado para obter o ID gerado
+      // 4. Busca produto cadastrado para obter o ID gerado
       const responseProdutoCadastrado = await fetch(`http://localhost:8080/api/produto/nome/${formCadastrar.nome}`);
       if(!responseProdutoCadastrado.ok) throw new Error("Erro na busca do produto cadastrado");
       const idProduto = await responseProdutoCadastrado.json();
 
-      // 4. Cadastra estoque vinculado ao produto
+      // 5. Cadastra estoque vinculado ao produto
       const novoEstoque = {
         produto_id: idProduto.id,
         quantidade: Number(formCadastrar.quantidade),
@@ -265,6 +324,8 @@ export default function Produtos() {
         imagem: "",
         quantidade: "",
       });
+      setArquivoImagemCadastro(null);
+      setPreviewCadastro("");
       listarTodos();
       listarEstoque();
     } catch (error) {
@@ -289,11 +350,13 @@ export default function Produtos() {
       imagem: produto.imagem || "",
       quantidade: itemEstoque ? itemEstoque.quantidade : 0,
     });
+    setArquivoImagemEdicao(null);
+    setPreviewEdicao("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
     // Salvar edição do produto - Endpoint: PUT /api/produto/{id}
-    // Backend espera ProdutoUpdateRequestDTO: { nome, descricao, preco, imagem, categoria_id, ativo }
+    // Backend espera Multipart form-data com @RequestPart: produto (JSON do DTO) e imagem (MultipartFile)
   const handleSalvarEdicao = async (e: any) => {
     e.preventDefault();
     try {
@@ -304,22 +367,26 @@ export default function Produtos() {
       if (!categoriaAtualizada.ok) throw new Error("Categoria não encontrada.");
       const categoriaAtualizadaResponse = await categoriaAtualizada.json();
 
-      // 2. Atualiza produto com DTO compatível com backend
-      const response = await fetch(
-        `http://localhost:8080/api/produto/${formEditar.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nome: formEditar.nome,
-            descricao: formEditar.descricao,
-            preco: Number(formEditar.preco),
-            imagem: formEditar.imagem,
-            categoria_id: categoriaAtualizadaResponse.id,
-            ativo: true  
-          }),
-        },
-      );
+      // 2. Prepara FormData com @RequestPart: produto (JSON) e, se houver, imagem (MultipartFile)
+      const produtoDTO = {
+        nome: formEditar.nome,
+        descricao: formEditar.descricao,
+        preco: Number(formEditar.preco),
+        categoria_id: categoriaAtualizadaResponse.id,
+        ativo: true,
+      };
+
+      const formData = new FormData();
+      formData.append("produto", new Blob([JSON.stringify(produtoDTO)], { type: "application/json" }));
+      if (arquivoImagemEdicao) {
+        formData.append("imagem", arquivoImagemEdicao);
+      }
+
+      const response = await fetch(`http://localhost:8080/api/produto/${formEditar.id}`, {
+        method: "PUT",
+        body: formData,
+      });
+
       if (!response.ok) throw new Error("Falha ao atualizar produto");
 
       // 3. Atualiza estoque do produto
@@ -344,6 +411,8 @@ export default function Produtos() {
         imagem: "",
         quantidade: 0,
       });
+      setArquivoImagemEdicao(null);
+      setPreviewEdicao("");
       listarTodos();
       listarEstoque();
     } catch (error) {
@@ -579,7 +648,7 @@ export default function Produtos() {
           <section className={styles.card}>
             <div className={styles.cardTituloImg}>
               <img
-                src={formCadastrar.imagem || "/icone-GB.png"}
+                src={previewCadastro || "/icone-GB.png"}
                 alt="Preview"
                 className={styles.logoCard}
                 style={{ objectFit: "contain", borderRadius: "8px" }}
@@ -589,12 +658,9 @@ export default function Produtos() {
             <form onSubmit={handleCadastrar} className={styles.formulario}>
               <input
                 className={styles.inputGroup}
-                type="text"
-                placeholder="URL da Imagem"
-                value={formCadastrar.imagem}
-                onChange={(e) =>
-                  setFormCadastrar({ ...formCadastrar, imagem: e.target.value })
-                }
+                type="file"
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                onChange={handleSelecionarImagemCadastro}
               />
               <input
                 className={styles.inputGroup}
@@ -658,9 +724,9 @@ export default function Produtos() {
               className={styles.cardTituloImg}
               style={{ marginBottom: "25px" }}
             >
-              {formEditar.imagem ? (
+              {previewEdicao || formEditar.imagem ? (
                 <img
-                  src={formEditar.imagem}
+                  src={previewEdicao || formEditar.imagem}
                   alt="Foto do Produto"
                   className={styles.imgCardEditar}
                 />
@@ -677,12 +743,9 @@ export default function Produtos() {
               <input type="hidden" value={formEditar.id} />
               <input
                 className={styles.inputGroup}
-                type="text"
-                placeholder="URL da Imagem"
-                value={formEditar.imagem}
-                onChange={(e) =>
-                  setFormEditar({ ...formEditar, imagem: e.target.value })
-                }
+                type="file"
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                onChange={handleSelecionarImagemEdicao}
               />
               <input
                 type="text"
