@@ -9,10 +9,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
@@ -65,6 +62,16 @@ public class S3Config {
         ResponseInputStream<GetObjectResponse> response = this.client.getObject(request);
 
         return response.readAllBytes();
+    }
+
+    public void deleteObject(String objectS3Key){
+
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .key(objectS3Key)
+                .bucket(bucketName)
+                .build();
+
+        DeleteObjectResponse response = this.client.deleteObject(request);
     }
 
     public String getObjectKeyFromS3Url(String url){

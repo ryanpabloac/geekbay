@@ -116,14 +116,19 @@ public class ProdutoService {
 
     // DELETE
 
-    public void deleteProdutoById(int id){
-        if(this.produtoRepository.existsById(id)) this.produtoRepository.deleteById(id);
+    public void deleteProdutoById(int id) {
+        if (this.produtoRepository.existsById(id)) {
+            Produto produtoDelete = produtoRepository.findById(id).get();
+            this.imageService.deleteImage(produtoDelete.getImagem());
+            this.produtoRepository.delete(produtoDelete);
+        }
         else throw new RuntimeException ("ID inválido ou produto inexistente");
     }
 
     public void deleteProdutoByNome(String nome){
         Optional<Produto> produtoDelete = filtraProdutoExistentePorNome(nome);
         if(produtoDelete.isEmpty()) throw new RuntimeException("Nome inválido ou produto inexistente");
+        this.imageService.deleteImage(produtoDelete.get().getImagem());
         this.produtoRepository.delete(produtoDelete.get());
     }
 

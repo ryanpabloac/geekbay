@@ -30,6 +30,11 @@ public class ImageService {
         return this.s3Config.getImage(objectS3Url);
     }
 
+    public void deleteImage(String objectS3Key){
+        this.s3Config.deleteObject(objectS3Key);
+        System.out.println("Imagem removida");
+    }
+
 
     public MagicBytes detectType(MultipartFile image) throws IOException{
         for(MagicBytes type: MagicBytes.values()){
