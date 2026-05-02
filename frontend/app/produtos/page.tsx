@@ -368,8 +368,8 @@ export default function Produtos() {
     }
     setCarregandoImagemModal(true);
     try {
-      const urlParam = encodeURIComponent(produto.imagem);
-      const response = await fetch(`http://localhost:8080/image/${urlParam}`);
+      const UUID = produto.imagem;
+      const response = await fetch(`http://localhost:8080/image/${UUID}`);
       if (!response.ok) throw new Error("Falha ao carregar imagem");
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -848,12 +848,12 @@ export default function Produtos() {
             <tbody>
               {produtos.map((p) => (
                 <tr key={p.id}>
-                  <td>
+                  <td style={{ textAlign: "center" }}>
                       {p.imagem ? (
                         <button
                           onClick={() => visualizarImagem(p)}
                           className={styles.btnAcao}
-                          style={{ fontSize: "10px", color: "#FF7A00", padding: "4px 8px" }}
+                          style={{ fontSize: "12px", color: "#000000", padding: "8px 12px", minWidth: "80px" }}
                         >
                           Ver Foto
                         </button>
@@ -1330,12 +1330,9 @@ export default function Produtos() {
               <p><strong>Preço:</strong> R$ {Number(produtoModal.preco ?? 0).toFixed(2)}</p>
               <p><strong>Categoria:</strong> {produtoModal.categoriaResponseDTO?.nome ?? produtoModal.categoria ?? "-"}</p>
               <p><strong>Descrição:</strong> {produtoModal.descricao ?? "Sem descrição"}</p>
-              <p><strong>ID:</strong> {produtoModal.id}</p>
+              <p><strong>Quantidade em Estoque:</strong> {estoque.find((e) => e.id === produtoModal.id)?.quantidade ?? 0}</p>
               <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
                 <button className={styles.btnAcao} onClick={fecharModalImagem}>Fechar</button>
-                <a href={produtoModal.imagem} target="_blank" rel="noreferrer" className={styles.btnAcao} style={{ textDecoration: "none" }}>
-                  Abrir original
-                </a>
               </div>
             </div>
           </div>

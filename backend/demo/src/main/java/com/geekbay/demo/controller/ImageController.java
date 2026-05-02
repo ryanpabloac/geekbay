@@ -32,10 +32,10 @@ public class ImageController {
         }
     }
 
-    @GetMapping("/{imageURL}")
-    public ResponseEntity<OutputStream> getImage(@PathVariable String imageURL){
+    @GetMapping("/{UUID}")
+    public ResponseEntity<byte[]> getImage(@PathVariable String UUID){
         try{
-            return ResponseEntity.ok(this.imageService.getImage(imageURL));
+            return ResponseEntity.ok(this.imageService.getImage(UUID));
         } catch (IOException e){
             System.out.println("Erro na busca da imagem");
             return ResponseEntity.badRequest().build();

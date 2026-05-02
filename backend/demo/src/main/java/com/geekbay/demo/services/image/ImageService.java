@@ -26,7 +26,7 @@ public class ImageService {
         return this.s3Config.uploadImage(file, UUID.randomUUID().toString());
     }
 
-    public OutputStream getImage(String objectS3Url) throws IOException{
+    public byte[] getImage(String objectS3Url) throws IOException{
         return this.s3Config.getImage(objectS3Url);
     }
 

@@ -5,6 +5,7 @@ import com.geekbay.demo.dtos.produto.ProdutoResponseDTO;
 import com.geekbay.demo.dtos.produto.ProdutoUpdateRequestDTO;
 import com.geekbay.demo.entities.categoria.Categoria;
 import com.geekbay.demo.entities.produto.Produto;
+import com.geekbay.demo.infra.S3Config;
 import com.geekbay.demo.repositories.CategoriaRepository;
 import com.geekbay.demo.repositories.ProdutoRepository;
 import com.geekbay.demo.services.image.ImageService;
@@ -22,11 +23,13 @@ public class ProdutoService {
     private final ProdutoRepository produtoRepository;
     private final CategoriaRepository categoriaRepository;
     private final ImageService imageService;
+    private final S3Config s3Config;
 
-    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository, ImageService imageService){
+    public ProdutoService(ProdutoRepository produtoRepository, CategoriaRepository categoriaRepository, ImageService imageService, S3Config s3Config){
         this.produtoRepository = produtoRepository;
         this.categoriaRepository = categoriaRepository;
         this.imageService = imageService;
+        this.s3Config = s3Config;
     }
 
 
@@ -66,6 +69,7 @@ public class ProdutoService {
         Optional<Categoria> categoriaAdd = this.categoriaRepository.findById(produtoRequestDTO.categoria_id());
         if(categoriaAdd.isEmpty()) throw new RuntimeException("ID da categoria inválido");
         String imageS3 = this.imageService.uploadImage(image);
+        imageS3 = s3Config.getObjectKeyFromS3Url(imageS3);
         Produto produtoAdd = new Produto(produtoRequestDTO);
         produtoAdd.setCategoria(categoriaAdd.get());
         produtoAdd.setImagem(imageS3);
@@ -82,8 +86,11 @@ public class ProdutoService {
         if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
         if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
         if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
-        if((!image.isEmpty()) && (image != null)) produtoQuery.get()
-                .setImagem(this.imageService.uploadImage(image));
+        if((!image.isEmpty()) && (image != null)){
+            String imageS3 = this.imageService.uploadImage(image);
+            imageS3 = s3Config.getObjectKeyFromS3Url(imageS3);
+            produtoQuery.get().setImagem(imageS3);
+        }
         if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
                 .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());
         if(produtoRequestDTO.ativo() != null) produtoQuery.get().setAtivo(produtoRequestDTO.ativo()); // Isso aqui tava dando erro, Boolean pode ser null, já boolean não pode -> Causa NullPointerException no processo de autounboxing
@@ -97,8 +104,11 @@ public class ProdutoService {
         if(produtoRequestDTO.nome() != null) produtoQuery.get().setNome(produtoRequestDTO.nome());
         if(produtoRequestDTO.descricao() != null) produtoQuery.get().setDescricao(produtoRequestDTO.descricao());
         if(produtoRequestDTO.preco() != null) produtoQuery.get().setPreco(produtoRequestDTO.preco());
-        if(!image.isEmpty()) produtoQuery.get()
-                .setImagem(this.imageService.uploadImage(image));
+        if((!image.isEmpty()) && (image != null)){
+            String imageS3 = this.imageService.uploadImage(image);
+            imageS3 = s3Config.getObjectKeyFromS3Url(imageS3);
+            produtoQuery.get().setImagem(imageS3);
+        }
         if(produtoRequestDTO.categoria_id() != null) produtoQuery.get()
                 .setCategoria(this.categoriaRepository.findById(produtoRequestDTO.categoria_id()).get());
         if(produtoRequestDTO.ativo() != null) produtoQuery.get().setAtivo(produtoRequestDTO.ativo()); // Isso aqui tava dando erro, Boolean pode ser null, já boolean não pode -> Causa NullPointerException no processo de autounboxing

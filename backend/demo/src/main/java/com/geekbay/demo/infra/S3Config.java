@@ -55,23 +55,20 @@ public class S3Config {
         return "http://" + bucketName + ".s3." + this.region + ".amazonaws.com/" +  imageName;
     }
 
-    public OutputStream getImage(String objectS3Url) throws IOException {
+    public byte[] getImage(String objectS3Url) throws IOException {
 
         GetObjectRequest request = GetObjectRequest.builder()
-                .key(getObjectKeyFromS3Url(objectS3Url))
+                .key(objectS3Url)
                 .bucket(bucketName)
                 .build();
 
         ResponseInputStream<GetObjectResponse> response = this.client.getObject(request);
 
-        OutputStream file = new FileOutputStream("ImagemProduto");
-        file.write(response.readAllBytes());
-
-        return file;
+        return response.readAllBytes();
     }
 
     public String getObjectKeyFromS3Url(String url){
-        return url.replaceAll(("s3://" + bucketName + "/"), "");
+        return url.replaceAll(("http://" + bucketName + ".s3." + region + ".amazonaws.com/"), "");
     }
 
 
