@@ -47,7 +47,7 @@ public class UsuarioController {
         );
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> getUser(@PathVariable Long usuarioId){
         try{
