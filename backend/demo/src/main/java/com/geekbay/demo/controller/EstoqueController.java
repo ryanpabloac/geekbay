@@ -4,6 +4,7 @@ import com.geekbay.demo.dtos.estoque.EstoqueRequestDTO;
 import com.geekbay.demo.dtos.estoque.EstoqueResponseDTO;
 import com.geekbay.demo.services.EstoqueService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class EstoqueController {
     public ResponseEntity<List<EstoqueResponseDTO>> getEstoqueList(){
         return ResponseEntity.ok(this.estoqueService.getEstoqueList());
     }
+
     @GetMapping("/produto/{id}")
     public ResponseEntity<EstoqueResponseDTO> getEstoqueByProdutoId(@PathVariable Integer id){
         try{
@@ -32,6 +34,8 @@ public class EstoqueController {
     }
 
     // POST
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping()
     public ResponseEntity addNewProdutoInEstoque(@RequestBody EstoqueRequestDTO estoqueRequestDTO){
         try{
@@ -43,6 +47,8 @@ public class EstoqueController {
     }
 
     // PUT
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/produto/{id}")
     public ResponseEntity updateQuantidadeByProdutoId(@PathVariable Integer id, @RequestBody EstoqueRequestDTO estoqueRequestDTO){
         try{

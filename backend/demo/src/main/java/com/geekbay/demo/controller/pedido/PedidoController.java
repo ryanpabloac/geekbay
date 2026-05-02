@@ -1,15 +1,13 @@
 package com.geekbay.demo.controller.pedido;
 
 import com.geekbay.demo.dtos.pedido.CancelarPedidoDTO;
-import com.geekbay.demo.dtos.pedido.ListarPedidosAnterioresResponseDTO;
-import com.geekbay.demo.dtos.pedido.PedidoRequestDTO;
 import com.geekbay.demo.dtos.pedido.PedidoResponseDTO;
-import com.geekbay.demo.enums.OrderStatus;
 import com.geekbay.demo.exceptions.NotFoundException;
 import com.geekbay.demo.exceptions.UnauthorizedOperationException;
 import com.geekbay.demo.services.PedidoService;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,16 +22,19 @@ public class PedidoController {
         this.pedidoService = pedidoService;
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{usuarioId}") // Lista últimos pedidos by usuarioId
     public ResponseEntity<List<PedidoResponseDTO>> listLastOrders(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(pedidoService.listLastOrders(usuarioId));
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<PedidoResponseDTO>> getAllOrdersList(){
         return ResponseEntity.ok(pedidoService.getAllOrdersList());
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/status/{status}")
     public ResponseEntity<List<PedidoResponseDTO>> getLastOrdersByStatus(@PathVariable String status){
         try{
@@ -43,6 +44,7 @@ public class PedidoController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/atualizar/{id}")   // Atualizar status do pedido -> baseado no ID
     public ResponseEntity updateOrderStatusByPedidoId(@PathVariable Long id, @RequestParam(name = "status") String status){
         try{
@@ -53,6 +55,7 @@ public class PedidoController {
         }
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/cancelar")
     public ResponseEntity cancelOrder(@RequestBody CancelarPedidoDTO request){
         try{
@@ -66,7 +69,5 @@ public class PedidoController {
             return ResponseEntity.status(HttpStatusCode.valueOf(401)).build();
         }
     }
-
-
 
 }

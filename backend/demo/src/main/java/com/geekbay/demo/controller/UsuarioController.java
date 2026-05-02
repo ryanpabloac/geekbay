@@ -9,6 +9,7 @@ import com.geekbay.demo.services.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
@@ -16,7 +17,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -46,6 +47,7 @@ public class UsuarioController {
         );
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/{usuarioId}")
     public ResponseEntity<UsuarioResponseDTO> getUser(@PathVariable Long usuarioId){
         try{
@@ -55,6 +57,7 @@ public class UsuarioController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> getUsersList(){
         return ResponseEntity.ok(this.usuarioService.getUsersList());

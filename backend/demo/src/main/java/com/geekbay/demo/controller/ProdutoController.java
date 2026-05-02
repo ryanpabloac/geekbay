@@ -7,6 +7,7 @@ import com.geekbay.demo.dtos.produto.ProdutoUpdateRequestDTO;
 import com.geekbay.demo.services.ProdutoService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -60,7 +61,7 @@ public class ProdutoController {
 
 
     // POST
-
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity addNewProduto(@RequestPart("imagem") MultipartFile image, @RequestPart("produto") ProdutoRequestDTO produtoRequestDTO){
         try{
@@ -75,6 +76,7 @@ public class ProdutoController {
 
 
     // PUT
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity updateProdutoById(@PathVariable Integer id, @RequestPart(value = "imagem", required = false) MultipartFile image, @RequestPart("produto") ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
@@ -89,6 +91,7 @@ public class ProdutoController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping(value = "/nome/{nome}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity updateProdutoByNome(@PathVariable String nome, @RequestPart(value = "imagem", required = false) MultipartFile image, @RequestPart("produto") ProdutoUpdateRequestDTO produtoRequestDTO){
         try{
@@ -105,6 +108,8 @@ public class ProdutoController {
 
 
     // DELETE
+
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity deleteProdutoById(@PathVariable Integer id){
         try{
@@ -116,6 +121,7 @@ public class ProdutoController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/nome/{nome}")
     public ResponseEntity deleteProdutoByNome(@PathVariable String nome){
         try{
