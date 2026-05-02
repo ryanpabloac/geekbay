@@ -1,21 +1,72 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
-import styles from "../../styles/Home.module.css";
-import Link from "next/link";
+import { useState, useEffect, useRef } from 'react';
+import styles from '../../styles/Home.module.css';
+import Link from 'next/link';
 
-type CategoriaDTO = {
+const corPadraoCategoria = '#9aa0a6';
+
+const paletaCores = [
+    '#FF7A00', // Laranja vibrante (GeekBay)
+    '#E91E63', // Rosa
+    '#9C27B0', // Roxo
+    '#3F51B5', // Azul índigo
+    '#00BCD4', // Cyan
+    '#00AB44', // Verde
+    '#FFEB3B', // Amarelo
+    '#FF5722', // Orange vermelho
+    '#795548', // Marrom
+    '#607D8B', // Azul cinzento
+    '#E53935', // Vermelho
+    '#7E57C2', // Lilás
+];
+
+const normalizarTexto = (texto?: string) =>
+    (texto || '')
+        .toLowerCase()
+        .trim();
+
+const obterImagemProduto = (imagem?: string | null) => {
+    if (!imagem) return '/icone-GB.png';
+    // A API expõe imagens em /image/{UUID}
+    return `http://localhost:8080/image/${imagem}`;
+};
+
+const gerarCorCategoria = (indiceOuValor: string | number) => {
+    const indice = typeof indiceOuValor === 'number' 
+        ? indiceOuValor 
+        : parseInt(String(indiceOuValor), 10);
+    return paletaCores[(isNaN(indice) ? 0 : indice) % paletaCores.length];
+};
+
+type CategoriaAgrupada = {
+    key: string;
+    label: string;
+    color: string;
+    produtos: any[];
+};
+
+type CategoriaFiltro = {
+    key: string;
+    label: string;
+    color: string;
+};
+
+type CategoriaAPI = {
     id: number;
     nome: string;
     descricao?: string;
+    key: string;
+    label: string;
+    color: string;
 };
 
-type ProdutoDTO = {
+type ProdutoCategoriaDTO = {
     id: number;
     nome: string;
     descricao?: string;
     preco: number | string;
-    imagem?: string;
+    imagem?: string | null;
     ativo?: boolean;
     categoriaResponseDTO?: {
         id: number;
@@ -24,302 +75,107 @@ type ProdutoDTO = {
     };
 };
 
-type CarrinhoItem = ProdutoDTO & {
+type EstoqueResponseDTO = {
     quantidade: number;
+    produtoResponseDTO: ProdutoCategoriaDTO;
 };
 
-const corCategoria = (id: number) => {
-    const hue = (id * 47) % 360;
-    return `hsl(${hue}, 78%, 46%)`;
+const extrairNomeCategoria = (estoque: EstoqueResponseDTO) =>
+    estoque.produtoResponseDTO?.categoriaResponseDTO?.nome || 'Sem categoria';
+
+const agruparProdutosPorCategoria = (estoques: EstoqueResponseDTO[], categoriasAPI: CategoriaAPI[]): CategoriaAgrupada[] => {
+    const agrupados: Record<string, CategoriaAgrupada> = {};
+
+    estoques.forEach((estoque) => {
+        const nomeCategoria = extrairNomeCategoria(estoque);
+        const nomeCategoriaNormalizado = normalizarTexto(nomeCategoria);
+        const categoriaCorrespondente = categoriasAPI.find((categoria) => normalizarTexto(categoria.nome) === nomeCategoriaNormalizado);
+        const chaveCategoria = String(categoriaCorrespondente?.id ?? nomeCategoriaNormalizado ?? 'outros');
+        const labelCategoria = categoriaCorrespondente?.nome || nomeCategoria;
+        const corCategoria = categoriaCorrespondente?.color || gerarCorCategoria(categoriaCorrespondente?.id ?? 0);
+
+        if (!agrupados[chaveCategoria]) {
+            agrupados[chaveCategoria] = {
+                key: chaveCategoria,
+                label: labelCategoria,
+                color: corCategoria,
+                produtos: [],
+            };
+        }
+
+        agrupados[chaveCategoria].produtos.push(estoque);
+    });
+
+    return Object.values(agrupados);
 };
-
-function InfiniteProductsRow({
-    produtos,
-    onInfo,
-    onAdd,
-}: {
-    produtos: ProdutoDTO[];
-    onInfo: (produto: ProdutoDTO) => void;
-    onAdd: (produto: ProdutoDTO) => void;
-}) {
-    const [scrollPausado, setScrollPausado] = useState(false);
-    const secaoRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const elemento = secaoRef.current;
-        if (!elemento) return;
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                // Quando a seção sair da área visível, retoma a animação automática.
-                if (!entry.isIntersecting && scrollPausado) {
-                    setScrollPausado(false);
-                }
-            },
-            {
-                root: null,
-                threshold: 0.2,
-            },
-        );
-
-        observer.observe(elemento);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, [scrollPausado]);
-
-    if (!produtos.length) {
-        return (
-            <div style={{ textAlign: "center", color: "#666", padding: "20px" }}>
-                Nenhum produto disponivel para esta categoria.
-            </div>
-        );
-    }
-
-    const pausarScrollAoClicarProduto = () => {
-        setScrollPausado(true);
-    };
-
-    const renderCard = (p: ProdutoDTO, key: string, onClickCard?: () => void) => {
-        const cor = corCategoria(p.categoriaResponseDTO?.id || 0);
-
-        return (
-            <section
-                key={key}
-                className={styles.card}
-                style={{
-                    textAlign: "center",
-                    minWidth: "280px",
-                    flexShrink: 0,
-                    position: "relative",
-                    cursor: onClickCard ? "pointer" : "default",
-                }}
-                onClick={onClickCard}
-            >
-                <button
-                    type="button"
-                    style={{
-                        position: "absolute",
-                        top: "10px",
-                        right: "10px",
-                        cursor: "pointer",
-                        border: "none",
-                        background: "transparent",
-                        padding: 0,
-                    }}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onInfo(p);
-                    }}
-                    aria-label={`Ver detalhes de ${p.nome}`}
-                >
-                    <img
-                        src="/info.png"
-                        alt="Informacoes"
-                        style={{ width: "22px", height: "22px" }}
-                    />
-                </button>
-
-                <img
-                    src={p.imagem || "/icone-GB.png"}
-                    alt={p.nome}
-                    style={{
-                        height: "130px",
-                        objectFit: "contain",
-                        borderRadius: "8px",
-                    }}
-                />
-
-                <div className={styles.nomeProdutoLinha}>
-                    <span
-                        className={styles.bolinhaCategoriaProduto}
-                        style={{ backgroundColor: cor }}
-                    />
-                    <h3 style={{ marginTop: "15px", fontSize: "16px" }}>{p.nome}</h3>
-                </div>
-
-                <p style={{ color: cor, fontSize: "14px" }}>
-                    {p.categoriaResponseDTO?.nome || "Sem categoria"}
-                </p>
-                <p
-                    style={{
-                        fontSize: "22px",
-                        fontWeight: "bold",
-                        color: "#ff7a00",
-                    }}
-                >
-                    R$ {Number(p.preco || 0).toFixed(2)}
-                </p>
-                <button
-                    className={styles.btnAcao}
-                    style={{ width: "100%", marginTop: "10px" }}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        onAdd(p);
-                    }}
-                >
-                    Adicionar ao Inventario
-                </button>
-            </section>
-        );
-    };
-
-    // Evita duplicidade visual quando a categoria possui poucos itens.
-    const deveAnimarLoop = produtos.length > 2;
-    const itens = scrollPausado
-        ? produtos
-        : deveAnimarLoop
-            ? [...produtos, ...produtos]
-            : produtos;
-
-    return (
-        <div
-            ref={secaoRef}
-            style={{
-                overflowX: scrollPausado || !deveAnimarLoop ? "auto" : "hidden",
-                overflowY: "hidden",
-                width: "100%",
-            }}
-        >
-            <div
-                style={{
-                    display: "flex",
-                    gap: "20px",
-                    width: "max-content",
-                    animation: !scrollPausado && deveAnimarLoop
-                        ? "scroll-horizontal 36s linear infinite"
-                        : "none",
-                }}
-            >
-                {itens.map((p, idx) =>
-                    renderCard(
-                        p,
-                        `${p.id}-${idx}`,
-                        () => pausarScrollAoClicarProduto(),
-                    ),
-                )}
-            </div>
-        </div>
-    );
-}
 
 export default function Loja() {
-    const [categorias, setCategorias] = useState<CategoriaDTO[]>([]);
-    const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>("todas");
-    const [produtosPorCategoria, setProdutosPorCategoria] = useState<Record<number, ProdutoDTO[]>>({});
-    const [produtoInfo, setProdutoInfo] = useState<ProdutoDTO | null>(null);
-    const [produtoParaAdicionar, setProdutoParaAdicionar] = useState<ProdutoDTO | null>(null);
-    const [quantidadeAdicionar, setQuantidadeAdicionar] = useState(1);
-    const [notificacaoTopo, setNotificacaoTopo] = useState("");
-    const [carrinho, setCarrinho] = useState<CarrinhoItem[]>([]);
+    const [categorias, setCategorias] = useState<CategoriaAPI[]>([]);
+    const [estoques, setEstoques] = useState<EstoqueResponseDTO[]>([]);
+    const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>('todas');
+    const [produtoInfo, setProdutoInfo] = useState<ProdutoCategoriaDTO | null>(null);
+    const [carrinho, setCarrinho] = useState<any[]>([]);
     const [mostrarCarrinho, setMostrarCarrinho] = useState(false);
     const [mostrarIntro, setMostrarIntro] = useState(true);
     const [isMuted, setIsMuted] = useState(true);
+    const [mostrarModalQuantidade, setMostrarModalQuantidade] = useState(false);
+    const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(1);
+    const [estoqueEmEdicao, setEstoqueEmEdicao] = useState<EstoqueResponseDTO | null>(null);
+    const [notificacao, setNotificacao] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
-        listarCategorias();
 
-        const carrinhoSalvo = localStorage.getItem("geekbay_cart");
-        if (carrinhoSalvo) {
+    useEffect(() => {
+        const carregarDadosLoja = async () => {
             try {
-                const parsed = JSON.parse(carrinhoSalvo);
-                if (Array.isArray(parsed)) setCarrinho(parsed);
-            } catch {
-                localStorage.removeItem("geekbay_cart");
-            }
-        }
+                const [resCategorias, resEstoques] = await Promise.all([
+                    fetch('http://localhost:8080/api/categoria'),
+                    fetch('http://localhost:8080/api/estoque'),
+                ]);
 
-        document.body.style.backgroundImage = 'url("/bg-GeekBay.png")';
-        document.body.style.backgroundSize = "cover";
-        document.body.style.backgroundAttachment = "fixed";
-        document.body.style.backgroundPosition = "center";
-        document.body.style.backgroundColor = "#000";
-
-        return () => {
-            document.body.style.backgroundImage = "";
-            document.body.style.backgroundSize = "";
-            document.body.style.backgroundAttachment = "";
-            document.body.style.backgroundPosition = "";
-            document.body.style.backgroundColor = "";
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!notificacaoTopo) return;
-        const timer = setTimeout(() => setNotificacaoTopo(""), 2800);
-        return () => clearTimeout(timer);
-    }, [notificacaoTopo]);
-
-    useEffect(() => {
-        if (!categorias.length) return;
-
-        const listarProdutosPorCategoria = async () => {
-            try {
-                if (categoriaSelecionada === "todas") {
-                    const mapa: Record<number, ProdutoDTO[]> = {};
-
-                    const response = await fetch("http://localhost:8080/api/produto");
-                    if (!response.ok) throw new Error("Falha ao carregar produtos");
-                    const dados = await response.json();
-                    const produtos = Array.isArray(dados) ? (dados as ProdutoDTO[]) : [];
-
-                    categorias.forEach((categoria) => {
-                        mapa[categoria.id] = [];
-                    });
-
-                    produtos.forEach((produto) => {
-                        const categoriaId = produto.categoriaResponseDTO?.id;
-                        if (!categoriaId) return;
-                        if (!mapa[categoriaId]) mapa[categoriaId] = [];
-                        mapa[categoriaId].push(produto);
-                    });
-
-                    setProdutosPorCategoria(mapa);
-                    return;
+                if (!resCategorias.ok) {
+                    throw new Error('Falha ao carregar categorias');
                 }
 
-                const categoriaId = Number(categoriaSelecionada);
-                const response = await fetch(
-                    `http://localhost:8080/api/produto/categoria/${categoriaId}`,
-                );
-                if (!response.ok) throw new Error("Falha ao carregar produtos da categoria");
-                const dados = await response.json();
+                if (!resEstoques.ok) {
+                    throw new Error('Falha ao carregar estoque');
+                }
 
-                setProdutosPorCategoria({
-                    [categoriaId]: Array.isArray(dados) ? (dados as ProdutoDTO[]) : [],
-                });
+                const dadosCategorias = await resCategorias.json();
+                const dadosEstoques = await resEstoques.json();
+
+                const listaCategorias = Array.isArray(dadosCategorias) ? dadosCategorias : [];
+                const listaEstoques = Array.isArray(dadosEstoques) ? dadosEstoques : [];
+
+                setCategorias(
+                    listaCategorias.map((categoria: any, indice: number) => ({
+                        ...categoria,
+                        key: String(categoria.id),
+                        label: categoria.nome,
+                        color: gerarCorCategoria(indice),
+                    }))
+                );
+                setEstoques(listaEstoques);
             } catch (error) {
-                console.error("Erro ao carregar produtos por categoria:", error);
-                setProdutosPorCategoria({});
+                console.error('Erro ao carregar vitrine.', error);
             }
         };
 
-        listarProdutosPorCategoria();
-    }, [categoriaSelecionada, categorias]);
+        carregarDadosLoja();
+        document.body.style.backgroundImage = 'url("./bg-GeekBay.png")';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundAttachment = 'fixed';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundColor = '#000';
 
-    const categoriasVisiveis = useMemo(() => {
-        if (categoriaSelecionada === "todas") {
-            return categorias.filter(
-                (categoria) => (produtosPorCategoria[categoria.id] || []).length > 0,
-            );
-        }
-        const selecionada = categorias.find((c) => String(c.id) === categoriaSelecionada);
-        return selecionada ? [selecionada] : [];
-    }, [categoriaSelecionada, categorias, produtosPorCategoria]);
-
-    const listarCategorias = async () => {
-        try {
-            const response = await fetch("http://localhost:8080/api/categoria");
-            if (!response.ok) throw new Error("Falha ao carregar categorias");
-            const dados = await response.json();
-            setCategorias(Array.isArray(dados) ? (dados as CategoriaDTO[]) : []);
-        } catch (error) {
-            console.error("Erro ao carregar categorias:", error);
-            setCategorias([]);
-        }
-    };
+        return () => {
+            document.body.style.backgroundImage = '';
+            document.body.style.backgroundSize = '';
+            document.body.style.backgroundAttachment = '';
+            document.body.style.backgroundPosition = '';
+            document.body.style.backgroundColor = '';
+        };
+    }, []);
 
     const alternarSom = () => {
         if (videoRef.current) {
@@ -329,9 +185,115 @@ export default function Loja() {
         }
     };
 
+    const abrirModalQuantidade = (estoque: EstoqueResponseDTO) => {
+        setEstoqueEmEdicao(estoque);
+        setQuantidadeSelecionada(1);
+        setMostrarModalQuantidade(true);
+    };
+
+    const fecharModalQuantidade = () => {
+        setMostrarModalQuantidade(false);
+        setEstoqueEmEdicao(null);
+        setQuantidadeSelecionada(1);
+    };
+
+    const incrementarQuantidade = () => {
+        if (estoqueEmEdicao && quantidadeSelecionada < estoqueEmEdicao.quantidade) {
+            setQuantidadeSelecionada(quantidadeSelecionada + 1);
+        }
+    };
+
+    const decrementarQuantidade = () => {
+        if (quantidadeSelecionada > 1) {
+            setQuantidadeSelecionada(quantidadeSelecionada - 1);
+        }
+    };
+
+    const confirmarAdicaoAoCarrinho = () => {
+        if (estoqueEmEdicao) {
+            adicionarAoCarrinhoComQuantidade(estoqueEmEdicao, quantidadeSelecionada);
+            fecharModalQuantidade();
+        }
+    };
+
+    const exibirNotificacao = (mensagem: string) => {
+        setNotificacao(mensagem);
+        setTimeout(() => {
+            setNotificacao(null);
+        }, 3000);
+    };
+
+    const atualizarQuantidadeCarrinho = (itemId: number, novaQuantidade: number) => {
+        // Encontrar o estoque disponível para este produto
+        const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === itemId);
+        const quantidadeMaxima = estoqueDisponivel?.quantidade || 999;
+
+        setCarrinho((carrinhoAtual) => {
+            if (novaQuantidade <= 0 || novaQuantidade > quantidadeMaxima) {
+                return carrinhoAtual;
+            }
+            const novoCarrinho = carrinhoAtual.map((item) =>
+                item.id === itemId ? { ...item, quantidade: novaQuantidade } : item
+            );
+            localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
+            return novoCarrinho;
+        });
+    };
+
+    const removerDoCarrinho = (itemId: number) => {
+        setCarrinho((carrinhoAtual) => {
+            const novoCarrinho = carrinhoAtual.filter((item) => item.id !== itemId);
+            localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
+            return novoCarrinho;
+        });
+        exibirNotificacao('Produto removido do inventário');
+    };
+
+
+    const produtosFiltrados = categoriaSelecionada === 'todas'
+        ? estoques
+        : estoques.filter((estoque) =>
+            String(estoque.produtoResponseDTO?.categoriaResponseDTO?.id) === categoriaSelecionada
+        );
+
+    const categoriasFiltro = categorias;
+
+    const produtosAgrupados = agruparProdutosPorCategoria(
+        categoriaSelecionada === 'todas' ? estoques : produtosFiltrados,
+        categorias,
+    );
+
+    const categoriaSelecionadaAtual = categorias.find((categoria) => categoria.key === categoriaSelecionada);
+
+    const categoriasVisiveis: CategoriaAgrupada[] = categoriaSelecionada === 'todas'
+        ? produtosAgrupados
+        : [{
+            key: categoriaSelecionadaAtual?.key || categoriaSelecionada,
+            label: categoriaSelecionadaAtual?.label || 'Categoria',
+            color: categoriaSelecionadaAtual?.color || gerarCorCategoria(categoriaSelecionada),
+            produtos: produtosFiltrados,
+        }];
+
+    const normalizarItemCarrinho = (estoque: EstoqueResponseDTO) => {
+        const produto = estoque.produtoResponseDTO;
+
+        return {
+            id: produto.id,
+            nome: produto.nome,
+            descricao: produto.descricao,
+            preco: produto.preco,
+            img: obterImagemProduto(produto.imagem),
+            categoria: produto.categoriaResponseDTO?.nome || 'Sem categoria',
+            categoriaResponseDTO: produto.categoriaResponseDTO,
+            quantidade: 1,
+        };
+    };
+
     // --- FUNÇÕES DO CARRINHO ---
 
-    const adicionarAoCarrinho = (produto: ProdutoDTO, quantidade = 1) => {
+    const adicionarAoCarrinhoComQuantidade = (estoque: EstoqueResponseDTO, quantidade: number) => {
+        const produto = normalizarItemCarrinho(estoque);
+
         setCarrinho((carrinhoAtual) => {
             let novoCarrinho;
             const itemExistente = carrinhoAtual.find((item) => item.id === produto.id);
@@ -346,59 +308,42 @@ export default function Loja() {
                 novoCarrinho = [...carrinhoAtual, { ...produto, quantidade }];
             }
 
-            localStorage.setItem("geekbay_cart", JSON.stringify(novoCarrinho));
+            localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
             return novoCarrinho;
         });
+
+        exibirNotificacao(`${produto.nome} foi adicionado ao inventário!`);
     };
 
-    const abrirConfirmacaoAdicao = (produto: ProdutoDTO) => {
-        setProdutoParaAdicionar(produto);
-        setQuantidadeAdicionar(1);
+    const adicionarAoCarrinho = (estoque: EstoqueResponseDTO) => {
+        abrirModalQuantidade(estoque);
     };
 
-    const confirmarAdicaoAoCarrinho = () => {
-        if (!produtoParaAdicionar) return;
-
-        const quantidade = Math.max(1, Number(quantidadeAdicionar) || 1);
-        adicionarAoCarrinho(produtoParaAdicionar, quantidade);
-        setNotificacaoTopo(`${produtoParaAdicionar.nome} adicionado ao carrinho.`);
-        setProdutoParaAdicionar(null);
-        setQuantidadeAdicionar(1);
-    };
-
-    const removerDoCarrinho = (produtoId: number) => {
-        setCarrinho((carrinhoAtual) => {
-            const novoCarrinho = carrinhoAtual.filter((item) => item.id !== produtoId);
-            localStorage.setItem("geekbay_cart", JSON.stringify(novoCarrinho));
-            return novoCarrinho;
-        });
-    };
-
-    const alterarQuantidadeCarrinho = (produtoId: number, novaQuantidade: number) => {
-        if (novaQuantidade <= 0) {
-            removerDoCarrinho(produtoId);
-            return;
-        }
-
-        setCarrinho((carrinhoAtual) => {
-            const novoCarrinho = carrinhoAtual.map((item) =>
-                item.id === produtoId ? { ...item, quantidade: novaQuantidade } : item,
-            );
-            localStorage.setItem("geekbay_cart", JSON.stringify(novoCarrinho));
-            return novoCarrinho;
-        });
-    };
 
     const calcularTotal = () => {
         return carrinho.reduce((acc, item) => {
-            const precoNormalizado = String(item.preco ?? "0").replace(",", ".");
-            const precoLimpo = Number(precoNormalizado) || 0;
-            return acc + ((Number(precoLimpo) || 0) * (item.quantidade || 1));
+
+            const precoLimpo = typeof item.preco === 'string'
+                ? parseFloat(item.preco.replace(',', '.'))
+                : item.preco;
+            return acc + (precoLimpo * (item.quantidade || 1));
         }, 0);
     };
 
     return (
         <>
+            <style>{`
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
 
             {mostrarIntro && (
                 <div className={styles.introOverlay}>
@@ -425,26 +370,6 @@ export default function Loja() {
             )}
 
             <div className={styles.corpo} style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)', minHeight: '100vh', filter: mostrarIntro ? 'blur(10px)' : 'none', transition: 'filter 0.5s ease' }}>
-                {notificacaoTopo && (
-                    <div
-                        style={{
-                            position: "fixed",
-                            top: "15px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            backgroundColor: "#1f7a1f",
-                            color: "#fff",
-                            padding: "12px 20px",
-                            borderRadius: "10px",
-                            zIndex: 10020,
-                            boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
-                            fontWeight: "bold",
-                        }}
-                    >
-                        {notificacaoTopo}
-                    </div>
-                )}
-
                 <header className={styles.cabecalho}>
                     <img src='/icone-GB.png' alt="Logo" className={styles.logo} />
 
@@ -466,9 +391,9 @@ export default function Loja() {
                             }}
                         >
                             <option value="todas">Todas Categorias</option>
-                            {categorias.map((categoria) => (
-                                <option key={categoria.id} value={String(categoria.id)}>
-                                    {categoria.nome}
+                            {categoriasFiltro.map((categoria) => (
+                                <option key={categoria.key} value={categoria.key}>
+                                    {categoria.label}
                                 </option>
                             ))}
                         </select>
@@ -479,7 +404,7 @@ export default function Loja() {
 
                         <button onClick={() => setMostrarCarrinho(true)} className={styles.btnAcaoCarrinho}>
                             <img src="/carrinhoGB.png" alt="carrinho" style={{ width: '20px' }} />
-                            ({carrinho.reduce((acc, i) => acc + (i.quantidade || 1), 0)})
+                            ({carrinho.length})
                         </button>
 
                     </div>
@@ -490,23 +415,79 @@ export default function Loja() {
                     <h2 style={{ color: 'black', textAlign: 'center', marginTop: '30px', fontSize: '35px', fontWeight: '600', textShadow: '-1px -1px 0 #ff7004, 1px -1px 0 #ff7004, -1px 1px 0 #ff7004, 1px 1px 0 #ff7004' }}> Explore o Multiverso Geek ! </h2>
                     <div className={styles.listaCategoriasProdutos}>
                         {categoriasVisiveis.map((categoria) => (
-                            <section key={categoria.id} className={styles.secaoCategoriaProdutos}>
-                                <div
-                                    className={styles.cabecalhoCategoria}
-                                    style={{ borderColor: corCategoria(categoria.id) }}
-                                >
-                                    <span
-                                        className={styles.bolinhaCategoria}
-                                        style={{ backgroundColor: corCategoria(categoria.id) }}
-                                    />
-                                    <h3 className={styles.tituloCategoria}>{categoria.nome}</h3>
+                            <section key={categoria.key} className={styles.secaoCategoriaProdutos}>
+                                <div className={styles.cabecalhoCategoria} style={{ borderColor: categoria.color }}>
+                                    <span className={styles.bolinhaCategoria} style={{ backgroundColor: categoria.color }} />
+                                    <h3 className={styles.tituloCategoria}>{categoria.label}</h3>
                                 </div>
 
-                                <InfiniteProductsRow
-                                    produtos={produtosPorCategoria[categoria.id] || []}
-                                    onInfo={setProdutoInfo}
-                                    onAdd={abrirConfirmacaoAdicao}
-                                />
+                                <div
+                                    className={styles.gradeProdutos}
+                                    style={
+                                        categoriaSelecionada === "todas"
+                                            ? undefined
+                                            : { display: "flex", flexDirection: "row", overflowX: "auto", gap: "30px" }
+                                    }
+                                >
+                                    {categoria.produtos.length === 0 ? (
+                                        <div style={{ color: '#fff', padding: '20px', textAlign: 'center', width: '100%' }}>
+                                            O Multiverso está vazio por aqui. Volte mais tarde ou explore outras categorias!
+                                        </div>
+                                    ) : (
+                                        categoria.produtos.map((p: any) => {
+                                            const categoriaProduto = categorias.find((item) => String(item.id) === String(p.produtoResponseDTO.categoriaResponseDTO?.id)) || categoriaSelecionadaAtual;
+
+                                            return (
+                                                <section
+                                                    key={p.produtoResponseDTO.id}
+                                                    className={styles.card}
+                                                    style={
+                                                        categoriaSelecionada === "todas"
+                                                            ? { textAlign: "center", position: "relative" }
+                                                            : { textAlign: "center", minWidth: "280px", flexShrink: 0, position: "relative" }
+                                                    }
+                                                >
+                                                    <div
+                                                        style={{
+                                                            position: "absolute",
+                                                            top: "10px",
+                                                            right: "10px",
+                                                            cursor: "pointer",
+                                                            fontSize: "20px"
+                                                        }}
+                                                        onClick={() => setProdutoInfo(p.produtoResponseDTO)}
+                                                    >
+                                                        <img
+                                                            src="/info.png"
+                                                            alt="Informações"
+                                                            style={{
+                                                                width: "22px",
+                                                                height: "22px"
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <img src={obterImagemProduto(p.produtoResponseDTO.imagem)} alt={p.produtoResponseDTO.nome} style={{ height: '130px', objectFit: 'contain', borderRadius: '8px' }} />
+
+                                                    <div className={styles.nomeProdutoLinha}>
+                                                        <span
+                                                            className={styles.bolinhaCategoriaProduto}
+                                                            style={{ backgroundColor: categoriaProduto?.color || corPadraoCategoria }}
+                                                        />
+                                                        <h3 style={{ marginTop: '15px', fontSize: '16px' }}>{p.produtoResponseDTO.nome}</h3>
+                                                    </div>
+
+                                                    <p style={{ color: categoriaProduto?.color || corPadraoCategoria, fontSize: '14px' }}>{p.produtoResponseDTO.categoriaResponseDTO?.nome || 'Sem categoria'}</p>
+                                                    <p style={{ fontSize: '22px', fontWeight: 'bold', color: '#ff7a00' }}>R$ {Number(p.produtoResponseDTO.preco || 0).toFixed(2)}</p>
+                                                    <p style={{ marginTop: '4px', color: '#666', fontSize: '13px' }}>Qtd. disponível: {p.quantidade}</p>
+                                                    <button className={styles.btnAcao} style={{ width: '100%', marginTop: '10px' }} onClick={() => adicionarAoCarrinho(p)}>
+                                                        Adicionar ao Inventário
+                                                    </button>
+                                                </section>
+                                            );
+                                        })
+                                    )}
+                                </div>
                             </section>
                         ))}
                     </div>
@@ -523,45 +504,79 @@ export default function Loja() {
                                         <thead style={{ background: '#fff' }}>
                                             <tr>
                                                 <th>Item</th>
-                                                <th>Quantidade</th>
                                                 <th>Preço</th>
-                                                <th>Ações</th>
+                                                <th>Qtd</th>
+                                                <th>Ação</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {carrinho.map((item, index) => (
-                                                <tr key={item.id || index}>
-                                                    <td>{item.nome}</td>
-                                                    <td>
-                                                        <input
-                                                            type="number"
-                                                            min={1}
-                                                            value={item.quantidade}
-                                                            onChange={(e) =>
-                                                                alterarQuantidadeCarrinho(
-                                                                    item.id,
-                                                                    Math.max(1, Number(e.target.value) || 1),
-                                                                )
-                                                            }
-                                                            style={{ width: "70px", padding: "4px" }}
-                                                        />
-                                                    </td>
-                                                    <td>R$ {Number(item.preco || 0).toFixed(2)}</td>
-                                                    <td>
-                                                        <button
-                                                            className={styles.btnAcao}
-                                                            style={{
-                                                                backgroundColor: "#d32f2f",
-                                                                padding: "6px 10px",
-                                                                width: "auto",
-                                                            }}
-                                                            onClick={() => removerDoCarrinho(item.id)}
-                                                        >
-                                                            Remover
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {carrinho.map((item, index) => {
+                                                const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === item.id);
+                                                const quantidadeMaxima = estoqueDisponivel?.quantidade || 999;
+
+                                                return (
+                                                    <tr key={item.id || index}>
+                                                        <td>{item.nome}</td>
+                                                        <td>R$ {item.preco}</td>
+                                                        <td>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                                                                <button
+                                                                    onClick={() => atualizarQuantidadeCarrinho(item.id, item.quantidade - 1)}
+                                                                    disabled={item.quantidade <= 1}
+                                                                    style={{
+                                                                        padding: '4px 8px',
+                                                                        fontSize: '14px',
+                                                                        backgroundColor: '#ff7a00',
+                                                                        color: '#fff',
+                                                                        border: 'none',
+                                                                        borderRadius: '3px',
+                                                                        cursor: item.quantidade <= 1 ? 'not-allowed' : 'pointer',
+                                                                        opacity: item.quantidade <= 1 ? 0.5 : 1,
+                                                                    }}
+                                                                >
+                                                                    −
+                                                                </button>
+                                                                <span style={{ minWidth: '30px', textAlign: 'center', fontWeight: 'bold' }}>
+                                                                    {item.quantidade}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => atualizarQuantidadeCarrinho(item.id, item.quantidade + 1)}
+                                                                    disabled={item.quantidade >= quantidadeMaxima}
+                                                                    style={{
+                                                                        padding: '4px 8px',
+                                                                        fontSize: '14px',
+                                                                        backgroundColor: '#ff7a00',
+                                                                        color: '#fff',
+                                                                        border: 'none',
+                                                                        borderRadius: '3px',
+                                                                        cursor: item.quantidade >= quantidadeMaxima ? 'not-allowed' : 'pointer',
+                                                                        opacity: item.quantidade >= quantidadeMaxima ? 0.5 : 1,
+                                                                    }}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <button
+                                                                onClick={() => removerDoCarrinho(item.id)}
+                                                                style={{
+                                                                    padding: '6px 12px',
+                                                                    fontSize: '12px',
+                                                                    backgroundColor: '#e53935',
+                                                                    color: '#fff',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: 'bold',
+                                                                }}
+                                                            >
+                                                                Remover
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -583,96 +598,135 @@ export default function Loja() {
                     <div className={styles.modalConteudo} style={{ maxWidth: "500px" }}>
                         <h3 style={{ color: "#ff7a00" }}>{produtoInfo.nome}</h3>
 
-                        <img
-                            src={produtoInfo.imagem || '/icone-GB.png'}
-                            alt={produtoInfo.nome}
-                            style={{ width: "100%", height: "200px", objectFit: "contain" }}
-                        />
-
                         <p style={{ marginTop: "15px" }}>
                             {produtoInfo.descricao}
                         </p>
 
-                        <p style={{ fontWeight: "bold", fontSize: "20px", color: "#ff7a00" }}>
-                            R$ {produtoInfo.preco}
+                        <p style={{ color: '#999', marginTop: '8px' }}>
+                            Categoria: {produtoInfo.categoriaResponseDTO?.nome || 'Sem categoria'}
                         </p>
 
-                        <button
-                            className={styles.btnAcao}
-                            style={{ marginTop: "15px", width: "100%" }}
-                            onClick={() => setProdutoInfo(null)}
-                        >
-                            Fechar
-                        </button>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                            <button
+                                className={styles.btnAcao}
+                                style={{ flex: 1 }}
+                                onClick={() => setProdutoInfo(null)}
+                            >
+                                Fechar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {produtoParaAdicionar && (
+            {mostrarModalQuantidade && estoqueEmEdicao && (
                 <div className={styles.modalOverlay}>
-                    <div className={styles.modalConteudo} style={{ maxWidth: "500px" }}>
-                        <h3 style={{ color: "#ff7a00" }}>Confirmar adição ao carrinho</h3>
-
-                        <img
-                            src={produtoParaAdicionar.imagem || "/icone-GB.png"}
-                            alt={produtoParaAdicionar.nome}
-                            style={{ width: "100%", height: "180px", objectFit: "contain" }}
-                        />
-
-                        <p style={{ marginTop: "12px", fontSize: "18px", fontWeight: 700 }}>
-                            {produtoParaAdicionar.nome}
-                        </p>
-                        <p style={{ color: "#ff7a00", fontWeight: "bold", fontSize: "22px" }}>
-                            R$ {Number(produtoParaAdicionar.preco || 0).toFixed(2)}
+                    <div className={styles.modalConteudo} style={{ maxWidth: "400px" }}>
+                        <h3 style={{ color: "#ff7a00" }}>Selecione a Quantidade</h3>
+                        
+                        <p style={{ marginTop: "20px", fontSize: "16px", textAlign: "center" }}>
+                            {estoqueEmEdicao.produtoResponseDTO.nome}
                         </p>
 
-                        <div style={{ marginTop: "10px", textAlign: "left" }}>
-                            <label htmlFor="qtd-add-carrinho" style={{ fontWeight: 600 }}>
-                                Quantidade
-                            </label>
+                        <div style={{ marginTop: "30px", display: "flex", alignItems: "center", justifyContent: "center", gap: "15px" }}>
+                            <button
+                                onClick={decrementarQuantidade}
+                                disabled={quantidadeSelecionada <= 1}
+                                style={{
+                                    padding: "10px 15px",
+                                    fontSize: "18px",
+                                    backgroundColor: "#ff7a00",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: quantidadeSelecionada <= 1 ? "not-allowed" : "pointer",
+                                    opacity: quantidadeSelecionada <= 1 ? 0.5 : 1,
+                                }}
+                            >
+                                −
+                            </button>
+
                             <input
-                                id="qtd-add-carrinho"
                                 type="number"
-                                min={1}
-                                value={quantidadeAdicionar}
-                                onChange={(e) => setQuantidadeAdicionar(Math.max(1, Number(e.target.value) || 1))}
-                                style={{ width: "100%", marginTop: "8px", padding: "10px" }}
+                                value={quantidadeSelecionada}
+                                onChange={(e) => {
+                                    const valor = parseInt(e.target.value);
+                                    if (!isNaN(valor) && valor > 0 && valor <= estoqueEmEdicao.quantidade) {
+                                        setQuantidadeSelecionada(valor);
+                                    }
+                                }}
+                                style={{
+                                    width: "60px",
+                                    padding: "10px",
+                                    fontSize: "18px",
+                                    textAlign: "center",
+                                    border: "2px solid #ff7a00",
+                                    borderRadius: "5px",
+                                }}
                             />
+
+                            <button
+                                onClick={incrementarQuantidade}
+                                disabled={quantidadeSelecionada >= estoqueEmEdicao.quantidade}
+                                style={{
+                                    padding: "10px 15px",
+                                    fontSize: "18px",
+                                    backgroundColor: "#ff7a00",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: quantidadeSelecionada >= estoqueEmEdicao.quantidade ? "not-allowed" : "pointer",
+                                    opacity: quantidadeSelecionada >= estoqueEmEdicao.quantidade ? 0.5 : 1,
+                                }}
+                            >
+                                +
+                            </button>
                         </div>
 
-                        <p style={{ marginTop: "15px" }}>
-                            Deseja adicionar este produto ao seu carrinho?
+                        <p style={{ marginTop: "15px", fontSize: "13px", color: "#ddd", textAlign: "center" }}>
+                            Disponível: {estoqueEmEdicao.quantidade}
                         </p>
 
-                        <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
-                            <button className={styles.btnAcao} onClick={confirmarAdicaoAoCarrinho}>
+                        <div style={{ display: "flex", gap: "10px", marginTop: "25px" }}>
+                            <button
+                                className={styles.btnAcao}
+                                onClick={confirmarAdicaoAoCarrinho}
+                                style={{ flex: 1 }}
+                            >
                                 Confirmar
                             </button>
                             <button
                                 className={styles.btnAcao}
-                                style={{ backgroundColor: "#777" }}
-                                onClick={() => {
-                                    setProdutoParaAdicionar(null);
-                                    setQuantidadeAdicionar(1);
-                                }}
+                                onClick={fecharModalQuantidade}
+                                style={{ flex: 1, backgroundColor: "#999" }}
                             >
-                                Cancelar
+                                Voltar
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            <style jsx global>{`
-                @keyframes scroll-horizontal {
-                    0% {
-                        transform: translateX(0);
-                    }
-                    100% {
-                        transform: translateX(-50%);
-                    }
-                }
-            `}</style>
+            {notificacao && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: "20px",
+                        right: "20px",
+                        backgroundColor: "#ff7a00",
+                        color: "#fff",
+                        padding: "15px 20px",
+                        borderRadius: "8px",
+                        zIndex: 10003,
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+                        animation: "slideIn 0.3s ease",
+                    }}
+                >
+                    {notificacao}
+                </div>
+            )}
 
 
         </>

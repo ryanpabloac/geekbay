@@ -9,6 +9,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -19,6 +20,9 @@ class UsuarioServiceTest {
     @Mock
     private UsuarioRepository userRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UsuarioService usuarioService;
 
@@ -27,9 +31,12 @@ class UsuarioServiceTest {
         Usuario usuario = mock(Usuario.class);
         when(usuario.getCpf()).thenReturn("12345678900");
         when(usuario.getEmail()).thenReturn("ruty@email.com");
+        when(usuario.getSenha()).thenReturn("123456");
 
         when(userRepository.existsByCpf("12345678900")).thenReturn(false);
         when(userRepository.existsByEmail("ruty@email.com")).thenReturn(false);
+
+        when(passwordEncoder.encode(any())).thenReturn("senha-criptografada");
 
         Usuario saved = mock(Usuario.class);
         when(userRepository.save(usuario)).thenReturn(saved);

@@ -2,6 +2,7 @@ package com.geekbay.demo.dtos.produto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
 
 public record ProdutoRequestDTO(
         @NotBlank
@@ -9,7 +10,7 @@ public record ProdutoRequestDTO(
         String descricao,
         @NotNull
         Double preco,
-        String imagem,
+        //MultipartFile imagem,
         @NotNull
         Integer categoria_id,
         Boolean ativo

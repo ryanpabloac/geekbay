@@ -2,6 +2,7 @@ package com.geekbay.demo.services;
 
 import com.geekbay.demo.dtos.usuario.UsuarioResponseDTO;
 import com.geekbay.demo.entities.usuario.Usuario;
+import com.geekbay.demo.enums.Profile;
 import com.geekbay.demo.exceptions.AlreadyExistsException;
 import com.geekbay.demo.exceptions.NotFoundException;
 import com.geekbay.demo.repositories.UsuarioRepository;
@@ -47,6 +48,7 @@ public class UsuarioService {
     public List<UsuarioResponseDTO> getUsersList(){
         return this.userRepository.findAll(Sort.by("id").ascending())
                 .stream()
+                .filter(usuario -> usuario.getPerfil().equals(Profile.CLIENTE))
                 .map(usuario -> new UsuarioResponseDTO(usuario))
                 .toList();
     }

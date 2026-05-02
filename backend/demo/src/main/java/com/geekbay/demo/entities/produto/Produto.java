@@ -57,7 +57,7 @@ public class Produto {
         this.nome = produtoRequestDTO.nome();
         this.descricao = produtoRequestDTO.descricao();
         this.preco = produtoRequestDTO.preco();
-        this.imagem = produtoRequestDTO.imagem();
+        //this.imagem = produtoRequestDTO.imagem();
         //this.categoria_id = produtoRequestDTO.categoria_id();
         this.ativo = produtoRequestDTO.ativo();
     }
