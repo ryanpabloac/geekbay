@@ -5,43 +5,115 @@ import styles from "../../styles/Home.module.css";
 import Link from "next/link";
 
 export default function FinalizarCompra() {
+  const getAuthHeaders = (extra: Record<string, string> = {}) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+    const base: Record<string, string> = { Accept: "application/json", ...extra };
+    if (token) base.Authorization = `Bearer ${token}`;
+    return base;
+  };
+
   const [itensCarrinho, setItensCarrinho] = useState<any[]>([]);
+  const [carrinhoId, setCarrinhoId] = useState<number | null>(null);
+  const [valorTotalCarrinho, setValorTotalCarrinho] = useState(0);
+  const [produtoSelecionado, setProdutoSelecionado] = useState<any>(null);
+  const [imagemProdutoSelecionado, setImagemProdutoSelecionado] = useState<string | null>(null);
+  const [carregandoImagem, setCarregandoImagem] = useState(false);
 
   const [cep, setCep] = useState("");
   const aplicarMascaraCEP = (valor: string) => {
-    return valor
-      .replace(/\D/g, "")
-      .replace(/^(\d{5})(\d)/, "$1-$2")
-      .substring(0, 9);
+    return valor.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2").substring(0, 9);
   };
 
   const [mostrarAgradecimento, setMostrarAgradecimento] = useState(false);
-  const [opcaoFrete, setOpcaoFrete] = useState<"PAC" | "SEDEX" | null>(null);
   const [valorFrete, setValorFrete] = useState(0);
-  const [valorBasePAC, setValorBasePAC] = useState(0);
-  const [valorBaseSEDEX, setValorBaseSEDEX] = useState(0);
   const [erroCEP, setErroCEP] = useState(false);
   const [etapaPagamento, setEtapaPagamento] = useState(false);
   const [dadosCliente, setDadosCliente] = useState<any>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [enderecoFrete, setEnderecoFrete] = useState<any>(null);
 
-  const [metodoPagamento, setMetodoPagamento] = useState<
-    "Pix" | "Cartao" | null
-  >(null);
+  const [metodoPagamento, setMetodoPagamento] = useState<"Pix" | "Cartao" | null>(null);
 
   useEffect(() => {
-    const usuarioLogado = localStorage.getItem("usuario_logado");
-    if (usuarioLogado) {
-      setDadosCliente(JSON.parse(usuarioLogado));
-    }
-
     document.body.style.backgroundImage = 'url("./bg-GeekBay.png")';
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundAttachment = "fixed";
     document.body.style.backgroundPosition = "center";
     document.body.style.backgroundColor = "#000";
 
-    const dadosSalvos = localStorage.getItem("geekbay_cart");
-    if (dadosSalvos) setItensCarrinho(JSON.parse(dadosSalvos));
+    const carregarDados = async () => {
+      try {
+        setCarregando(true);
+
+        let emailArmazenado = localStorage.getItem("usuario_email");
+        if (!emailArmazenado) {
+          const usuarioSalvo = localStorage.getItem("usuario_logado");
+          if (usuarioSalvo) {
+            try {
+              const parsed = JSON.parse(usuarioSalvo);
+              emailArmazenado = parsed.email || parsed.usuario || parsed.mail || parsed.username;
+            } catch (err) {
+              console.error("Erro ao parsear usuario_logado", err);
+            }
+          }
+        }
+
+        if (!emailArmazenado) {
+          const token = localStorage.getItem("jwt_token");
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split(".")[1]));
+              emailArmazenado = payload.email || payload.sub || payload.username;
+            } catch (err) {
+              console.error("Erro ao extrair email do token", err);
+            }
+          }
+        }
+
+        if (!emailArmazenado) {
+          console.error("Email não encontrado no localStorage");
+          setCarregando(false);
+          return;
+        }
+
+        const resUsuario = await fetch(
+          `http://localhost:8080/api/usuarios/email/${encodeURIComponent(emailArmazenado)}`,
+          { headers: getAuthHeaders() }
+        );
+
+        if (!resUsuario.ok) {
+          throw new Error("Erro ao buscar usuário");
+        }
+
+        const usuario = await resUsuario.json();
+        setDadosCliente(usuario);
+
+        const resCarrinho = await fetch(`http://localhost:8080/api/carrinho/${usuario.id}`, {
+          headers: getAuthHeaders(),
+        });
+
+        if (!resCarrinho.ok) {
+          throw new Error("Erro ao buscar carrinho");
+        }
+
+        const carrinho = await resCarrinho.json();
+        setCarrinhoId(carrinho.id);
+        // Marcar itens da API com fromApi: true
+        const itensComMarcacao = (carrinho.itens || []).map((item: any) => ({
+            ...item,
+            fromApi: true,
+        }));
+        setItensCarrinho(itensComMarcacao);
+        setValorTotalCarrinho(carrinho.valorTotal || 0);
+        setValorFrete(carrinho.valorFrete || 0);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarDados();
 
     return () => {
       document.body.style.backgroundImage = "";
@@ -49,110 +121,190 @@ export default function FinalizarCompra() {
     };
   }, []);
 
-  const alterarQuantidade = (id: string, tipo: "aumentar" | "diminuir") => {
-    const novaLista = itensCarrinho.map((item) => {
-      if (item.id === id) {
-        const quantidadeAtual = item.quantidade || 1;
+  const alterarQuantidade = (itemId: number, tipo: "aumentar" | "diminuir") => {
+    const item = itensCarrinho.find(i => i.id === itemId);
+    if (!item) return;
 
-        const novaQuantidade =
-          tipo === "aumentar"
-            ? quantidadeAtual + 1
-            : quantidadeAtual > 1
-              ? quantidadeAtual - 1
-              : 1;
+    const quantidadeAtual = item.quantidade || 1;
+    const novaQuantidade =
+      tipo === "aumentar"
+        ? quantidadeAtual + 1
+        : quantidadeAtual > 1
+          ? quantidadeAtual - 1
+          : 1;
 
-        return { ...item, quantidade: novaQuantidade };
-      }
-      return item;
-    });
-
+    // Atualizar localmente
+    const novaLista = itensCarrinho.map((i) =>
+      i.id === itemId ? { ...i, quantidade: novaQuantidade } : i
+    );
     setItensCarrinho(novaLista);
-    localStorage.setItem("geekbay_cart", JSON.stringify(novaLista));
+
+    // Se é item da API (tem dadosCliente), fazer PATCH
+    if (dadosCliente?.id) {
+      fetch('http://localhost:8080/api/carrinho', {
+        method: 'PATCH',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ usuarioId: dadosCliente.id, itemId, quantidade: novaQuantidade }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            console.error('Erro ao atualizar quantidade:', response.status);
+          }
+        })
+        .catch((error) => {
+          console.error('Erro ao fazer PATCH:', error);
+        });
+    }
   };
 
   const calcularSubtotal = () => {
-    return itensCarrinho.reduce((acc, item) => {
-      const preco =
-        typeof item.preco === "string"
-          ? parseFloat(item.preco.replace(",", "."))
-          : item.preco;
-      return acc + preco * (item.quantidade || 1);
-    }, 0);
+    return itensCarrinho.reduce((acc, item) => acc + item.produto.preco * (item.quantidade || 1), 0);
   };
 
   const lidarComCalculoFrete = () => {
-    const cepLimpo = cep.replace(/\D/g, "");
-    if (cepLimpo.length === 8) {
-      const base = cepLimpo.startsWith("0") ? 15.0 : 26.0;
-      setValorBasePAC(base);
-      setValorBaseSEDEX(base + 28.9);
-      setOpcaoFrete("PAC");
-      setValorFrete(base);
-    } else {
-      setErroCEP(true);
+    const consultarCep = async () => {
+      const cepLimpo = cep.replace(/\D/g, "");
+
+      if (cepLimpo.length !== 8) {
+        setErroCEP(true);
+        return;
+      }
+
+      try {
+        setErroCEP(false);
+        const response = await fetch(`http://localhost:8080/api/enderecos/cep/${cepLimpo}`, {
+          headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao buscar endereço pelo CEP");
+        }
+
+        const endereco = await response.json();
+        setEnderecoFrete(endereco);
+      } catch (error) {
+        console.error("Erro ao consultar CEP:", error);
+        setErroCEP(true);
+        setEnderecoFrete(null);
+      }
+    };
+
+    consultarCep();
+  };
+
+  const removerItemDoCheckout = (itemId: number) => {
+    const usuarioId = dadosCliente?.id;
+
+    if (!usuarioId) {
+      console.error("Usuário não encontrado para excluir item do carrinho");
+      return;
+    }
+
+    fetch("http://localhost:8080/api/carrinho", {
+      method: "DELETE",
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ usuarioId, itemId }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Erro ao excluir item do carrinho");
+        }
+
+        const novaLista = itensCarrinho.filter((item) => item.id !== itemId);
+        setItensCarrinho(novaLista);
+      })
+      .catch((error) => {
+        console.error("Erro ao remover item do carrinho:", error);
+      });
+  };
+
+  const abrirDetalhesProduto = async (produto: any) => {
+    setProdutoSelecionado(produto);
+    setImagemProdutoSelecionado(null);
+
+    if (!produto?.imagem) return;
+
+    try {
+      setCarregandoImagem(true);
+      const response = await fetch(`http://localhost:8080/image/${encodeURIComponent(produto.imagem)}`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao carregar imagem do produto");
+      }
+
+      const blob = await response.blob();
+      setImagemProdutoSelecionado(URL.createObjectURL(blob));
+    } catch (error) {
+      console.error("Erro ao buscar imagem do produto:", error);
+    } finally {
+      setCarregandoImagem(false);
     }
   };
 
-  const removerItemDoCheckout = (id: string) => {
-    const novaLista = itensCarrinho.filter((item) => item.id !== id);
-    setItensCarrinho(novaLista);
-    localStorage.setItem("geekbay_cart", JSON.stringify(novaLista));
-    if (novaLista.length === 0) {
-      setOpcaoFrete(null);
-      setValorFrete(0);
+  const fecharDetalhesProduto = () => {
+    if (imagemProdutoSelecionado) {
+      URL.revokeObjectURL(imagemProdutoSelecionado);
     }
+    setProdutoSelecionado(null);
+    setImagemProdutoSelecionado(null);
+    setCarregandoImagem(false);
   };
 
   const confirmarCompra = async () => {
     if (!metodoPagamento || !dadosCliente) return;
 
+    // Filtrar apenas itens que NÃO vieram da API (novos itens adicionados)
+    const itensParaAdicionar = itensCarrinho.filter((item) => !item.fromApi);
+
+    // Se não há itens novos, apenas ir para pagamento
+    if (itensParaAdicionar.length === 0) {
+      // Todos os itens já estão no carrinho da API, preparar pedido com todos os itens
+      setEtapaPagamento(true);
+      return;
+    }
+
     const novoPedido = {
       cliente_id: dadosCliente.id,
-      nome_cliente: dadosCliente.name,
+      nome_cliente: dadosCliente.nome,
       status: "Pendente",
       valor_total: (calcularSubtotal() + valorFrete).toFixed(2),
       data_pedido: new Date().toISOString().split("T")[0],
       metodo_pagamento: metodoPagamento,
-      itens: itensCarrinho.map((item) => ({
-        produto_id: item.id,
-        nome: item.nome,
+      itens: itensParaAdicionar.map((item) => ({
+        produto_id: item.produto.id,
+        nome: item.produto.nome,
         quantidade: item.quantidade || 1,
-        preco_unitario: item.preco,
-        categoria: item.categoria,
+        preco_unitario: item.produto.preco,
+        categoria: item.produto.categoriaResponseDTO.nome,
       })),
     };
 
     try {
       const response = await fetch("http://localhost:5000/pedidos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(novoPedido),
       });
 
       if (response.ok) {
-        const resEstoque = await fetch("http://localhost:5000/estoque");
+        const resEstoque = await fetch("http://localhost:5000/estoque", { headers: getAuthHeaders() });
         const estoqueAtual = await resEstoque.json();
 
         for (const item of novoPedido.itens) {
-          const registroEstoque = estoqueAtual.find(
-            (e: any) => String(e.produto_id) === String(item.produto_id),
-          );
-
+          const registroEstoque = estoqueAtual.find((e: any) => String(e.produto_id) === String(item.produto_id));
           if (registroEstoque) {
-            const novaQuantidade =
-              registroEstoque.quantidade_disponivel - item.quantidade;
+            const novaQuantidade = registroEstoque.quantidade_disponivel - item.quantidade;
             await fetch(`http://localhost:5000/estoque/${registroEstoque.id}`, {
               method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                quantidade_disponivel: novaQuantidade >= 0 ? novaQuantidade : 0,
-              }),
+              headers: getAuthHeaders({ "Content-Type": "application/json" }),
+              body: JSON.stringify({ quantidade_disponivel: novaQuantidade >= 0 ? novaQuantidade : 0 }),
             });
           }
         }
 
         setItensCarrinho([]);
-        localStorage.removeItem("geekbay_cart");
         setMostrarAgradecimento(true);
       }
     } catch (error) {
@@ -161,88 +313,42 @@ export default function FinalizarCompra() {
   };
 
   return (
-    <div
-      className={styles.corpo}
-      style={{ backgroundColor: "rgba(0, 0, 0, 0.75)", minHeight: "100vh" }}
-    >
+    <div className={styles.corpo} style={{ backgroundColor: "rgba(0, 0, 0, 0.75)", minHeight: "100vh" }}>
       <header className={styles.cabecalho}>
         <img src="/icone-GB.png" alt="Logo" className={styles.logo} />
         <h1 className={styles.nomeCabecalho}>GeekBay Store</h1>
         <div style={{ marginLeft: "auto" }}>
-          <Link
-            href="/loja"
-            style={{ textDecoration: "none", color: "#ff7004" }}
-          >
+          <Link href="/loja" style={{ textDecoration: "none", color: "#ff7004" }}>
             Voltar
           </Link>
         </div>
       </header>
 
-      <main
-        style={{
-          maxWidth: "900px",
-          margin: "0 auto",
-          width: "100%",
-          padding: "20px",
-        }}
-      >
+      <main style={{ maxWidth: "900px", margin: "0 auto", width: "100%", padding: "20px" }}>
         {!etapaPagamento ? (
           <>
-            <h2
-              style={{
-                color: "#FF7A00",
-                textAlign: "center",
-                margin: "30px 0",
-                textTransform: "uppercase",
-              }}
-            >
+            <h2 style={{ color: "#FF7A00", textAlign: "center", margin: "30px 0", textTransform: "uppercase" }}>
               Este é o seu carrinho de compras
             </h2>
 
             {itensCarrinho.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "50px",
-                  backgroundColor: "#fff",
-                  borderRadius: "15px",
-                  border: "2px dashed #FF7A00",
-                }}
-              >
-                <img
-                  src="/icone-GB.png"
-                  alt="Vazio"
-                  style={{ width: "80px", opacity: 0.5 }}
-                />
-                <h3 style={{ color: "#666", marginTop: "20px" }}>
-                  O multiverso está vazio...
-                </h3>
-                <Link
-                  href="/loja"
-                  className={styles.btnAcao}
-                  style={{
-                    display: "inline-block",
-                    marginTop: "20px",
-                    textDecoration: "none",
-                  }}
-                >
+              <div style={{ textAlign: "center", padding: "50px", backgroundColor: "#fff", borderRadius: "15px", border: "2px dashed #FF7A00" }}>
+                <img src="/icone-GB.png" alt="Vazio" style={{ width: "80px", opacity: 0.5 }} />
+                <h3 style={{ color: "#666", marginTop: "20px" }}>O multiverso está vazio...</h3>
+                <Link href="/loja" className={styles.btnAcao} style={{ display: "inline-block", marginTop: "20px", textDecoration: "none" }}>
                   VOLTAR PARA A LOJA
                 </Link>
               </div>
             ) : (
               <>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
-                >
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {itensCarrinho.map((item, index) => (
                     <div
                       key={item.id || index}
                       style={{
-                        display: "flex",
+                        display: "grid",
+                        gridTemplateColumns: "auto 1fr auto auto",
+                        alignItems: "center",
                         backgroundColor: "#fff",
                         borderRadius: "15px",
                         border: "2px solid #FF7A00",
@@ -252,531 +358,263 @@ export default function FinalizarCompra() {
                       }}
                     >
                       <button
+                        type="button"
+                        onClick={() => abrirDetalhesProduto(item.produto)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "60px",
+                          height: "60px",
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          cursor: "pointer",
+                        }}
+                        aria-label={`Ver detalhes de ${item.produto.nome}`}
+                      >
+                        <img src="/icone-GB.png" alt="Logo GeekBay" style={{ width: "60px", height: "60px", objectFit: "contain" }} />
+                      </button>
+
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: "18px", marginBottom: "5px" }}>
+                          {item.produto.nome}
+                          <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
+                            Categoria: {item.produto.categoriaResponseDTO.nome}
+                          </div>
+                        </h3>
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", minWidth: "120px" }}>
+                        <button
+                          onClick={() => alterarQuantidade(item.id, "diminuir")}
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "6px",
+                            border: "2px solid #FF7A00",
+                            background: "white",
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          -
+                        </button>
+                        <span style={{ fontSize: "16px", fontWeight: "bold", minWidth: "20px", textAlign: "center" }}>{item.quantidade || 1}</span>
+                        <button
+                          onClick={() => alterarQuantidade(item.id, "aumentar")}
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "6px",
+                            border: "2px solid #FF7A00",
+                            background: "#FF7A00",
+                            color: "white",
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div style={{ textAlign: "center", minWidth: "110px" }}>
+                        <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+                          R$ {(item.produto.preco * (item.quantidade || 1)).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <button
                         onClick={() => removerItemDoCheckout(item.id)}
                         style={{
                           position: "absolute",
-                          top: "10px",
-                          right: "15px",
+                          top: "12px",
+                          right: "12px",
                           background: "none",
                           border: "none",
                           color: "#FF7A00",
                           cursor: "pointer",
                           fontSize: "18px",
                         }}
+                        aria-label={`Excluir ${item.produto.nome}`}
                       >
                         ❌
                       </button>
-                      <img
-                        src={item.img}
-                        alt={item.nome}
-                        style={{
-                          width: "120px",
-                          height: "120px",
-                          objectFit: "contain",
-                          border: "1px solid #FF7A00",
-                          borderRadius: "10px",
-                        }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: "18px", marginBottom: "5px" }}>
-                          {item.nome}
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              marginTop: "10px",
-                            }}
-                          >
-                            <button
-                              onClick={() =>
-                                alterarQuantidade(item.id, "diminuir")
-                              }
-                              style={{
-                                width: "30px",
-                                height: "30px",
-                                borderRadius: "6px",
-                                border: "2px solid #FF7A00",
-                                background: "white",
-                                cursor: "pointer",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              -
-                            </button>
-
-                            <span
-                              style={{ fontSize: "16px", fontWeight: "bold" }}
-                            >
-                              {item.quantidade || 1}
-                            </span>
-
-                            <button
-                              onClick={() =>
-                                alterarQuantidade(item.id, "aumentar")
-                              }
-                              style={{
-                                width: "30px",
-                                height: "30px",
-                                borderRadius: "6px",
-                                border: "2px solid #FF7A00",
-                                background: "#FF7A00",
-                                color: "white",
-                                cursor: "pointer",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </h3>
-                        <p
-                          style={{
-                            maxWidth: "450px",
-                            fontSize: "13px",
-                            color: "#666",
-                            fontFamily: "sans-serif",
-                          }}
-                        >
-                          <strong>Especificações Técnicas: </strong>
-                          {item.descricao}
-                        </p>
-                        <div style={{ textAlign: "right", marginTop: "10px" }}>
-                          <span
-                            style={{ fontWeight: "bold", fontSize: "20px" }}
-                          >
-                            R$
-                            {(
-                              parseFloat(item.preco.replace(",", ".")) *
-                              (item.quantidade || 1)
-                            ).toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
                     </div>
                   ))}
                 </div>
 
-                <div
-                  style={{
-                    marginTop: "30px",
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "20px",
-                    backgroundColor: "#fff",
-                    padding: "25px",
-                    borderRadius: "15px",
-                    border: "2px solid #FF7A00",
-                  }}
-                >
+                <div style={{ marginTop: "30px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", backgroundColor: "#fff", padding: "25px", borderRadius: "15px", border: "2px solid #FF7A00" }}>
                   <div>
-                    <p style={{ fontWeight: "bold" }}>
-                      Vamos calcular o frete?
-                    </p>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "10px",
-                        marginTop: "10px",
-                      }}
-                    >
+                    <p style={{ fontWeight: "bold" }}>Vamos calcular o frete?</p>
+                    <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                       <input
                         type="text"
                         placeholder="00000-000"
                         value={cep}
-                        onChange={(e) => {
-                          const valorFormatado = aplicarMascaraCEP(
-                            e.target.value,
-                          );
-                          setCep(valorFormatado);
-                        }}
-                        style={{
-                          padding: "10px",
-                          borderRadius: "10px",
-                          border: "1px solid #ccc",
-                          flex: 1,
-                        }}
+                        onChange={(e) => setCep(aplicarMascaraCEP(e.target.value))}
+                        style={{ padding: "10px", borderRadius: "10px", border: "1px solid #ccc", flex: 1 }}
                       />
-                      <button
-                        className={styles.btnAcao}
-                        style={{ margin: 0 }}
-                        onClick={lidarComCalculoFrete}
-                      >
+                      <button className={styles.btnAcao} style={{ margin: 0 }} onClick={lidarComCalculoFrete}>
                         Calcular
                       </button>
                     </div>
-                    <img
-                      src="/balao-Frete.png"
-                      alt="Mascote"
-                      style={{ width: "250px", marginTop: "20px" }}
-                    />
+                    <img src="/balao-Frete.png" alt="Mascote" style={{ width: "250px", marginTop: "20px" }} />
                   </div>
 
-                  <div
-                    style={{
-                      borderLeft: "1px solid #ddd",
-                      paddingLeft: "20px",
-                    }}
-                  >
-                    <p style={{ fontWeight: "bold", marginBottom: "15px" }}>
-                      Opções de Envio
-                    </p>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => {
-                          setOpcaoFrete("PAC");
-                          setValorFrete(valorBasePAC);
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "20px",
-                            height: "20px",
-                            border: "2px solid #FF7A00",
-                            borderRadius: "4px",
-                            backgroundColor:
-                              opcaoFrete === "PAC" ? "#FF7A00" : "transparent",
-                            color: "#fff",
-                            textAlign: "center",
-                            lineHeight: "18px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {opcaoFrete === "PAC" && "X"}
-                        </div>
-                        <p style={{ margin: 0 }}>
-                          PAC: R$ {valorBasePAC.toFixed(2)}
-                        </p>
+                  <div style={{ borderLeft: "1px solid #ddd", paddingLeft: "20px" }}>
+                    {enderecoFrete ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
+                        <p style={{ margin: 0 }}><strong>Estado:</strong> {enderecoFrete.state || "-"}</p>
+                        <p style={{ margin: 0 }}><strong>Cidade:</strong> {enderecoFrete.city || "-"}</p>
+                        <p style={{ margin: 0 }}><strong>Bairro:</strong> {enderecoFrete.neighborhood || "-"}</p>
+                        <p style={{ margin: 0 }}><strong>Rua:</strong> {enderecoFrete.street || "-"}</p>
+                        <h3 style={{ fontSize: "18px", textAlign: "center", marginTop: "20px", marginBottom: "10px" }}>
+                          FRETE: R$ {valorFrete.toFixed(2)}
+                        </h3>
+                        <h3 style={{ fontSize: "18px", textAlign: "center" }}>
+                          TOTAL: R$ {(valorTotalCarrinho + valorFrete).toFixed(2)}
+                        </h3>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => {
-                          setOpcaoFrete("SEDEX");
-                          setValorFrete(valorBaseSEDEX);
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "20px",
-                            height: "20px",
-                            border: "2px solid #FF7A00",
-                            borderRadius: "4px",
-                            backgroundColor:
-                              opcaoFrete === "SEDEX"
-                                ? "#FF7A00"
-                                : "transparent",
-                            color: "#fff",
-                            textAlign: "center",
-                            lineHeight: "18px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {opcaoFrete === "SEDEX" && "X"}
+                    ) : (
+                      <>
+                        <p style={{ marginTop: "15px", color: "#666" }}>Digite o CEP para consultar as informações do frete.</p>
+                        <div style={{ marginTop: "70px", textAlign: "right" }}>
+                          <h3 style={{ fontSize: "18px", textAlign: "center" }}>
+                            TOTAL: R$ {valorTotalCarrinho.toFixed(2)}
+                          </h3>
                         </div>
-                        <p style={{ margin: 0 }}>
-                          SEDEX: R$ {valorBaseSEDEX.toFixed(2)}
-                        </p>
+                      </>
+                    )}
+                    {enderecoFrete && (
+                      <div style={{ marginTop: "30px", textAlign: "right" }}>
+                        <button className={styles.btnAcao} style={{ width: "100%", marginTop: "20px" }} onClick={() => setEtapaPagamento(true)} disabled={!enderecoFrete}>
+                          FINALIZAR COMPRA
+                        </button>
                       </div>
-                    </div>
-                    <div style={{ marginTop: "100px", textAlign: "right" }}>
-                      <h3 style={{ fontSize: "18px", textAlign: "center" }}>
-                        TOTAL: R$ {(calcularSubtotal() + valorFrete).toFixed(2)}
-                      </h3>
-                      <button
-                        className={styles.btnAcao}
-                        style={{ width: "100%", marginTop: "20px" }}
-                        onClick={() => setEtapaPagamento(true)}
-                        disabled={!opcaoFrete}
-                      >
-                        FINALIZAR COMPRA
-                      </button>
-                    </div>
+                    )}
                   </div>
                 </div>
               </>
             )}
           </>
         ) : (
-          <div
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: "15px",
-              border: "3px solid #FF7A00",
-              padding: "30px",
-              marginTop: "20px",
-            }}
-          >
-            <h2
-              style={{
-                color: "#FF7A00",
-                textAlign: "center",
-                marginBottom: "20px",
-              }}
-            >
-              FINALIZAR A COMPRA
-            </h2>
+          <div style={{ backgroundColor: "#fff", borderRadius: "15px", border: "3px solid #FF7A00", padding: "30px", marginTop: "20px" }}>
+            <h2 style={{ color: "#FF7A00", textAlign: "center", marginBottom: "20px" }}>FINALIZAR A COMPRA</h2>
 
-            <div
-              style={{
-                border: "2px solid #FF7A00",
-                borderRadius: "10px",
-                padding: "15px",
-                marginBottom: "20px",
-                fontFamily: "sans-serif",
-              }}
-            >
-              <p>
-                <strong>{dadosCliente?.name || "Carregando nome..."}</strong>
-              </p>
-              <p style={{ fontSize: "14px" }}>
-                CPF: {dadosCliente?.cpf || "000.000.000-00"} | email:{" "}
-                {dadosCliente?.email}{" "}
-              </p>
-              <p style={{ fontSize: "14px" }}>
-                Endereço: {dadosCliente?.address?.street},{" "}
-                {dadosCliente?.address?.number} -{" "}
-                {dadosCliente?.address?.neighborhood} ,
-                {dadosCliente?.address.zip_code}
-              </p>
-              <p style={{ fontSize: "14px" }}>
-                {dadosCliente?.address?.city} / {dadosCliente?.address?.state} |
-                CEP: {dadosCliente?.address?.zip_code}
-              </p>
-              <p style={{ fontSize: "14px" }}>
-                Telefone:
-                {dadosCliente?.phone || "()00000-0000"}
-              </p>
-
-              {dadosCliente?.address?.complement && (
-                <p style={{ fontSize: "12px", color: "#666" }}>
-                  Obs: {dadosCliente.address.complement}
-                </p>
-              )}
+            <div style={{ border: "2px solid #FF7A00", borderRadius: "10px", padding: "15px", marginBottom: "20px", fontFamily: "sans-serif" }}>
+              <p><strong>{dadosCliente?.nome || "Carregando nome..."}</strong></p>
+              <p style={{ fontSize: "14px" }}>CPF: {dadosCliente?.cpf || "000.000.000-00"} | email: {dadosCliente?.email}</p>
+              <p style={{ fontSize: "14px" }}>Endereço: {dadosCliente?.endereco?.rua}, {dadosCliente?.endereco?.numero} - {dadosCliente?.endereco?.bairro} , {dadosCliente?.endereco?.cep}</p>
+              <p style={{ fontSize: "14px" }}>{dadosCliente?.endereco?.cidade} / {dadosCliente?.endereco?.estado} | CEP: {dadosCliente?.endereco?.cep}</p>
+              <p style={{ fontSize: "14px" }}>Telefone: {dadosCliente?.telefone || "()00000-0000"}</p>
+              {dadosCliente?.endereco?.complemento && <p style={{ fontSize: "12px", color: "#666" }}>Obs: {dadosCliente.endereco.complemento}</p>}
             </div>
 
-            <div
-              style={{
-                border: "2px solid #FF7A00",
-                borderRadius: "10px",
-                padding: "20px",
-                marginBottom: "20px",
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            >
-              <div
-                style={{
-                  maxHeight: "250px",
-                  overflowY: "auto",
-                  paddingRight: "10px",
-                }}
-              >
+            <div style={{ border: "2px solid #FF7A00", borderRadius: "10px", padding: "20px", marginBottom: "20px", width: "100%", boxSizing: "border-box" }}>
+              <div style={{ maxHeight: "250px", overflowY: "auto", paddingRight: "10px" }}>
                 {itensCarrinho.map((item, index) => (
                   <div
                     key={item.id || index}
                     style={{
-                      display: "flex",
+                      display: "grid",
+                      gridTemplateColumns: "auto 1fr auto auto",
                       gap: "20px",
                       alignItems: "center",
                       marginBottom: "15px",
-                      borderBottom:
-                        index !== itensCarrinho.length - 1
-                          ? "1px solid #eee"
-                          : "none",
+                      borderBottom: index !== itensCarrinho.length - 1 ? "1px solid #eee" : "none",
                       paddingBottom: "15px",
                       width: "100%",
+                      position: "relative",
                     }}
                   >
-                    <img
-                      src={item.img}
+                    <button
+                      type="button"
+                      onClick={() => abrirDetalhesProduto(item.produto)}
                       style={{
-                        width: "70px",
-                        height: "70px",
-                        objectFit: "contain",
-                        border: "1px solid #FF7A00",
-                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "40px",
+                        height: "40px",
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        cursor: "pointer",
                       }}
-                      alt={item.nome}
-                    />
+                      aria-label={`Ver detalhes de ${item.produto.nome}`}
+                    >
+                      <img src="/icone-GB.png" alt="Logo GeekBay" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+                    </button>
 
-                    <div style={{ flex: 1 }}>
+                    <div style={{ minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: "18px" }}>
-                        <strong>{item.nome}</strong>
-                        <span
-                          style={{
-                            color: "#FF7A00",
-                            marginLeft: "10px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          x{item.quantidade || 1}
-                        </span>
-                      </p>
-                      <p
-                        style={{
-                          margin: "5px 0 0 0",
-                          fontSize: "16px",
-                          color: "#444",
-                        }}
-                      >
-                        Valor Unitário: R$ {item.preco}
+                        <strong>{item.produto.nome}</strong>
+                        <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                          Categoria: {item.produto.categoriaResponseDTO.nome}
+                        </div>
                       </p>
                     </div>
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", minWidth: "120px" }}>
+                      <div style={{ fontSize: "16px", fontWeight: "bold" }}>x{item.quantidade || 1}</div>
+                    </div>
+
+                    <div style={{ textAlign: "center", minWidth: "110px" }}>
+                      <span style={{ fontWeight: "bold", fontSize: "18px" }}>R$ {(item.produto.preco * (item.quantidade || 1)).toFixed(2)}</span>
+                    </div>
+
+                    <button
+                      onClick={() => removerItemDoCheckout(item.id)}
+                      style={{
+                        position: "absolute",
+                        top: "12px",
+                        right: "12px",
+                        background: "none",
+                        border: "none",
+                        color: "#FF7A00",
+                        cursor: "pointer",
+                        fontSize: "18px",
+                      }}
+                      aria-label={`Excluir ${item.produto.nome}`}
+                    >
+                      ❌
+                    </button>
                   </div>
                 ))}
               </div>
 
-              <div
-                style={{
-                  marginTop: "10px",
-                  paddingTop: "10px",
-                  borderTop: "2px solid #FF7A00",
-                  fontSize: "14px",
-                  color: "#666",
-                  fontFamily: "sans-serif",
-                }}
-              >
-                <p style={{ margin: 0 }}>
-                  <strong>Frete: </strong> Opção {opcaoFrete} (R${" "}
-                  {valorFrete.toFixed(2)})
-                </p>
+              <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "2px solid #FF7A00", fontSize: "14px", color: "#666", fontFamily: "sans-serif" }}>
+                {enderecoFrete ? (
+                  <p style={{ margin: 0 }}>
+                    <strong>Frete: </strong> R$ {valorFrete.toFixed(2)}
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-              }}
-            >
-              <div
-                style={{
-                  border: "2px solid #FF7A00",
-                  borderRadius: "10px",
-                  padding: "15px",
-                }}
-              >
-                <p style={{ fontWeight: "bold", marginBottom: "15px" }}>
-                  Métodos de Pagamento
-                </p>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginBottom: "15px",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setMetodoPagamento("Pix")}
-                >
-                  <div
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      border: "2px solid #FF7A00",
-                      borderRadius: "4px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor:
-                        metodoPagamento === "Pix" ? "#FF7A00" : "transparent",
-                    }}
-                  >
-                    {metodoPagamento === "Pix" && (
-                      <span
-                        style={{
-                          color: "#fff",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        X
-                      </span>
-                    )}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <div style={{ border: "2px solid #FF7A00", borderRadius: "10px", padding: "15px" }}>
+                <p style={{ fontWeight: "bold", marginBottom: "15px" }}>Métodos de Pagamento</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px", cursor: "pointer" }} onClick={() => setMetodoPagamento("Pix")}>
+                  <div style={{ width: "18px", height: "18px", border: "2px solid #FF7A00", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: metodoPagamento === "Pix" ? "#FF7A00" : "transparent" }}>
+                    {metodoPagamento === "Pix" && <span style={{ color: "#fff", fontSize: "12px", fontWeight: "bold" }}>X</span>}
                   </div>
-                  <div
-                    style={{
-                      width: "15px",
-                      height: "15px",
-                      backgroundColor: "#FF7A00",
-                      transform: "rotate(45deg)",
-                    }}
-                  ></div>
+                  <div style={{ width: "15px", height: "15px", backgroundColor: "#FF7A00", transform: "rotate(45deg)" }}></div>
                   <span>Pix</span>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setMetodoPagamento("Cartao")}
-                >
-                  <div
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      border: "2px solid #FF7A00",
-                      borderRadius: "4px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor:
-                        metodoPagamento === "Cartao"
-                          ? "#FF7A00"
-                          : "transparent",
-                    }}
-                  >
-                    {metodoPagamento === "Cartao" && (
-                      <span
-                        style={{
-                          color: "#fff",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        X
-                      </span>
-                    )}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => setMetodoPagamento("Cartao")}>
+                  <div style={{ width: "18px", height: "18px", border: "2px solid #FF7A00", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: metodoPagamento === "Cartao" ? "#FF7A00" : "transparent" }}>
+                    {metodoPagamento === "Cartao" && <span style={{ color: "#fff", fontSize: "12px", fontWeight: "bold" }}>X</span>}
                   </div>
                   <span>💳 Cartão de Crédito</span>
                 </div>
               </div>
 
               <div style={{ textAlign: "center" }}>
-                <img
-                  src="/balao-Finalizar.png"
-                  alt="Mascote"
-                  style={{ width: "200px" }}
-                />
-                <h3 style={{ fontSize: "22px", margin: "15px 0" }}>
-                  TOTAL: R$ {(calcularSubtotal() + valorFrete).toFixed(2)}
-                </h3>
-                <button
-                  className={styles.btnAcao}
-                  style={{ width: "100%" }}
-                  onClick={confirmarCompra}
-                  disabled={!metodoPagamento}
-                >
+                <img src="/balao-Finalizar.png" alt="Mascote" style={{ width: "200px" }} />
+                <h3 style={{ fontSize: "22px", margin: "15px 0" }}>TOTAL: R$ {(valorTotalCarrinho + valorFrete).toFixed(2)}</h3>
+                <button className={styles.btnAcao} style={{ width: "100%" }} onClick={confirmarCompra} disabled={!metodoPagamento}>
                   FINALIZAR COMPRA
                 </button>
                 <button
@@ -800,10 +638,7 @@ export default function FinalizarCompra() {
 
       {erroCEP && (
         <div className={styles.modalOverlay}>
-          <div
-            className={styles.modalConteudo}
-            style={{ border: "5px solid #FF7A00", textAlign: "center" }}
-          >
+          <div className={styles.modalConteudo} style={{ border: "5px solid #FF7A00", textAlign: "center" }}>
             <h2 style={{ color: "#FF7A00" }}>ALERTA: CEP INVÁLIDO!</h2>
             <p>Verifique as coordenadas e tente novamente.</p>
             <button
@@ -811,8 +646,7 @@ export default function FinalizarCompra() {
               onClick={() => {
                 setErroCEP(false);
                 setCep("");
-                setValorFrete(0);
-                setOpcaoFrete(null);
+                setEnderecoFrete(null);
               }}
             >
               Digitar CEP
@@ -823,37 +657,66 @@ export default function FinalizarCompra() {
 
       {mostrarAgradecimento && (
         <div className={styles.modalOverlay}>
-          <div
-            className={styles.modalConteudo}
-            style={{ border: "5px solid #FF7A00", textAlign: "center" }}
-          >
-            <h2 style={{ color: "#FF7A00", fontFamily: "Orbitron" }}>
-              {" "}
-              MISSÃO CUMPRIDA!
-            </h2>
-            <img
-              src="/icone-GB.png"
-              alt="Mascote"
-              style={{ width: "100px", marginTop: "20px" }}
-              className={styles.logoPulsante}
-            />
-            <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-              Obrigado, Player 1!
-            </p>
+          <div className={styles.modalConteudo} style={{ border: "5px solid #FF7A00", textAlign: "center" }}>
+            <h2 style={{ color: "#FF7A00", fontFamily: "Orbitron" }}>MISSÃO CUMPRIDA!</h2>
+            <img src="/icone-GB.png" alt="Mascote" style={{ width: "100px", marginTop: "20px" }} className={styles.logoPulsante} />
+            <p style={{ fontSize: "18px", fontWeight: "bold" }}>Obrigado, Player 1!</p>
             <p>Seu pedido foi processado no multiverso.</p>
-            <Link
-              href="/loja"
-              className={styles.btnAcao}
-              style={{
-                textDecoration: "none",
-                display: "block",
-                marginTop: "20px",
-                fontFamily: "sans-serif",
-                fontSize: "13px",
-              }}
-            >
+            <Link href="/loja" className={styles.btnAcao} style={{ textDecoration: "none", display: "block", marginTop: "20px", fontFamily: "sans-serif", fontSize: "13px" }}>
               Voltar para Homepage
             </Link>
+          </div>
+        </div>
+      )}
+
+      {produtoSelecionado && (
+        <div className={styles.modalOverlay} onClick={fecharDetalhesProduto}>
+          <div
+            className={styles.modalConteudo}
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              maxWidth: "700px",
+              width: "90%",
+              border: "5px solid #FF7A00",
+              textAlign: "left",
+              position: "relative",
+            }}
+          >
+            <button
+              type="button"
+              onClick={fecharDetalhesProduto}
+              style={{
+                position: "absolute",
+                top: "12px",
+                right: "12px",
+                background: "none",
+                border: "none",
+                color: "#FF7A00",
+                fontSize: "22px",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            >
+              ×
+            </button>
+
+            <h2 style={{ color: "#FF7A00", marginBottom: "15px", paddingRight: "30px" }}>{produtoSelecionado.nome}</h2>
+            <p style={{ marginBottom: "10px", fontFamily: "sans-serif" }}>
+              <strong>Categoria:</strong> {produtoSelecionado.categoriaResponseDTO?.nome || "Sem categoria"}
+            </p>
+            <p style={{ marginBottom: "20px", fontFamily: "sans-serif" }}>
+              <strong>Descrição:</strong> {produtoSelecionado.descricao || "Sem descrição"}
+            </p>
+
+            <div style={{ minHeight: "220px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #eee", borderRadius: "12px", background: "#fafafa", padding: "15px" }}>
+              {carregandoImagem ? (
+                <p style={{ margin: 0, color: "#666" }}>Carregando imagem...</p>
+              ) : imagemProdutoSelecionado ? (
+                <img src={imagemProdutoSelecionado} alt={produtoSelecionado.nome} style={{ maxWidth: "100%", maxHeight: "320px", objectFit: "contain" }} />
+              ) : (
+                <p style={{ margin: 0, color: "#666" }}>Este produto não possui imagem.</p>
+              )}
+            </div>
           </div>
         </div>
       )}

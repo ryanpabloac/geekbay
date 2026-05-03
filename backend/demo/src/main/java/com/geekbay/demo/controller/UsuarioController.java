@@ -57,6 +57,18 @@ public class UsuarioController {
         }
     }
 
+    @GetMapping("/email/{email}")
+    public ResponseEntity<UsuarioResponseDTO> getUserByEmail(@PathVariable String email){
+        try{
+            return ResponseEntity.ok(this.usuarioService.getUserByEmail(email));
+        } catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+
+
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> getUsersList(){

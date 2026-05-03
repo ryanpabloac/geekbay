@@ -43,7 +43,11 @@ public class UsuarioService {
         return new UsuarioResponseDTO(user.get());
     }
 
-
+    public UsuarioResponseDTO getUserByEmail(String email){
+        Optional<Usuario> user = userRepository.findByEmail(email);
+        if(user.isEmpty()) throw new NotFoundException("Usuário não encontrado");
+        return new UsuarioResponseDTO(user.get());
+    }
 
     public List<UsuarioResponseDTO> getUsersList(){
         return this.userRepository.findAll(Sort.by("id").ascending())

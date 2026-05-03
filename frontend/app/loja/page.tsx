@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from '../../styles/Home.module.css';
 import Link from 'next/link';
 
@@ -109,7 +110,33 @@ const agruparProdutosPorCategoria = (estoques: EstoqueResponseDTO[], categoriasA
     return Object.values(agrupados);
 };
 
+const normalizarItemCarrinhoApi = (item: any) => {
+    const produto = item?.produto || item?.produtoResponseDTO || item;
+    const produtoId = produto?.id ?? item?.produtoId ?? item?.id;
+
+    return {
+        id: item?.id ?? produtoId,
+        itemId: item?.id,
+        produtoId,
+        nome: produto?.nome ?? item?.nome ?? 'Produto',
+        descricao: produto?.descricao ?? item?.descricao ?? '',
+        preco: produto?.preco ?? item?.preco ?? 0,
+        img: obterImagemProduto(produto?.imagem ?? item?.img ?? item?.imagem),
+        categoria: produto?.categoriaResponseDTO?.nome ?? item?.categoria ?? 'Sem categoria',
+        categoriaResponseDTO: produto?.categoriaResponseDTO ?? item?.categoriaResponseDTO,
+        quantidade: item?.quantidade || 1,
+        fromApi: true,
+        produto,
+    };
+};
+
 export default function Loja() {
+    const getAuthHeaders = (extra: Record<string,string> = {}) => {
+        const token = (typeof window !== 'undefined') ? localStorage.getItem('jwt_token') : null;
+        const base: Record<string,string> = { Accept: 'application/json', ...extra };
+        if (token) base.Authorization = `Bearer ${token}`;
+        return base;
+    };
     const [categorias, setCategorias] = useState<CategoriaAPI[]>([]);
     const [estoques, setEstoques] = useState<EstoqueResponseDTO[]>([]);
     const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>('todas');
@@ -122,15 +149,85 @@ export default function Loja() {
     const [quantidadeSelecionada, setQuantidadeSelecionada] = useState(1);
     const [estoqueEmEdicao, setEstoqueEmEdicao] = useState<EstoqueResponseDTO | null>(null);
     const [notificacao, setNotificacao] = useState<string | null>(null);
+    const [isLogged, setIsLogged] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const router = useRouter();
+
+    const obterUsuarioLogado = async () => {
+        let email: string | undefined;
+
+        const usuarioSalvo = localStorage.getItem('usuario_logado');
+        if (usuarioSalvo) {
+            try {
+                const parsed = JSON.parse(usuarioSalvo);
+                email = parsed.email || parsed.mail || parsed.username;
+            } catch (err) {
+                console.error('Erro ao parsear usuario_logado', err);
+            }
+        }
+
+        if (!email) {
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    email = payload.email || payload.sub || payload.username;
+                } catch (err) {
+                    console.error('Erro ao extrair email do token', err);
+                }
+            }
+        }
+
+        if (!email) {
+            return null;
+        }
+
+        const resUser = await fetch(`http://localhost:8080/api/usuarios/email/${encodeURIComponent(email)}`, {
+            headers: getAuthHeaders(),
+        });
+
+        if (!resUser.ok) {
+            throw new Error('Falha ao recuperar usuário logado');
+        }
+
+        return resUser.json();
+    };
+
+    const carregarCarrinhoDaApi = async () => {
+        try {
+            if (!Boolean(localStorage.getItem('jwt_token'))) {
+                return;
+            }
+
+            const usuario = await obterUsuarioLogado();
+            if (!usuario?.id) {
+                return;
+            }
+
+            const resCarrinho = await fetch(`http://localhost:8080/api/carrinho/${usuario.id}`, {
+                headers: getAuthHeaders(),
+            });
+
+            if (!resCarrinho.ok) {
+                throw new Error('Falha ao carregar carrinho da API');
+            }
+
+            const carrinhoApi = await resCarrinho.json();
+            const itensApi = Array.isArray(carrinhoApi?.itens) ? carrinhoApi.itens : [];
+
+            setCarrinho(itensApi.map(normalizarItemCarrinhoApi));
+        } catch (error) {
+            console.error('Erro ao carregar carrinho da API.', error);
+        }
+    };
 
 
     useEffect(() => {
         const carregarDadosLoja = async () => {
             try {
                 const [resCategorias, resEstoques] = await Promise.all([
-                    fetch('http://localhost:8080/api/categoria'),
-                    fetch('http://localhost:8080/api/estoque'),
+                    fetch('http://localhost:8080/api/categoria', { headers: getAuthHeaders() }),
+                    fetch('http://localhost:8080/api/estoque', { headers: getAuthHeaders() }),
                 ]);
 
                 if (!resCategorias.ok) {
@@ -162,6 +259,10 @@ export default function Loja() {
         };
 
         carregarDadosLoja();
+        setIsLogged(Boolean(localStorage.getItem('jwt_token')));
+        const onStorage = () => setIsLogged(Boolean(localStorage.getItem('jwt_token')));
+        window.addEventListener('storage', onStorage);
+    carregarCarrinhoDaApi();
         document.body.style.backgroundImage = 'url("./bg-GeekBay.png")';
         document.body.style.backgroundSize = 'cover';
         document.body.style.backgroundAttachment = 'fixed';
@@ -174,6 +275,7 @@ export default function Loja() {
             document.body.style.backgroundAttachment = '';
             document.body.style.backgroundPosition = '';
             document.body.style.backgroundColor = '';
+            window.removeEventListener('storage', onStorage);
         };
     }, []);
 
@@ -223,30 +325,107 @@ export default function Loja() {
         }, 3000);
     };
 
-    const atualizarQuantidadeCarrinho = (itemId: number, novaQuantidade: number) => {
-        // Encontrar o estoque disponível para este produto
-        const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === itemId);
+    const atualizarQuantidadeCarrinho = (produtoId: number, novaQuantidade: number, itemId?: number) => {
+        const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === produtoId);
         const quantidadeMaxima = estoqueDisponivel?.quantidade || 999;
 
-        setCarrinho((carrinhoAtual) => {
-            if (novaQuantidade <= 0 || novaQuantidade > quantidadeMaxima) {
-                return carrinhoAtual;
-            }
-            const novoCarrinho = carrinhoAtual.map((item) =>
-                item.id === itemId ? { ...item, quantidade: novaQuantidade } : item
-            );
-            localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
-            return novoCarrinho;
-        });
+        if (novaQuantidade <= 0 || novaQuantidade > quantidadeMaxima) {
+            return;
+        }
+
+        const atualizarLocalmente = () => {
+            setCarrinho((carrinhoAtual) => {
+                const novoCarrinho = carrinhoAtual.map((item) =>
+                    (item.produtoId ?? item.id) === produtoId ? { ...item, quantidade: novaQuantidade } : item
+                );
+                localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
+                return novoCarrinho;
+            });
+        };
+
+        // Se é um item da API (tem itemId), fazer PATCH
+        if (itemId) {
+            const obterUsuarioLogado = async () => {
+                try {
+                    const usuarioSalvo = localStorage.getItem('usuario_logado');
+                    if (usuarioSalvo) {
+                        const parsed = JSON.parse(usuarioSalvo);
+                        return parsed.id ? parsed : null;
+                    }
+                    const token = localStorage.getItem('jwt_token');
+                    if (token) {
+                        try {
+                            const payload = JSON.parse(atob(token.split('.')[1]));
+                            return { id: payload.id || payload.sub };
+                        } catch {
+                            return null;
+                        }
+                    }
+                    return null;
+                } catch {
+                    return null;
+                }
+            };
+
+            obterUsuarioLogado().then((usuario) => {
+                if (usuario?.id) {
+                    fetch('http://localhost:8080/api/carrinho', {
+                        method: 'PATCH',
+                        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({ usuarioId: usuario.id, itemId, quantidade: novaQuantidade }),
+                    })
+                        .then((response) => {
+                            if (response.ok) {
+                                atualizarLocalmente();
+                            } else {
+                                console.error('Erro ao atualizar quantidade:', response.status);
+                                exibirNotificacao('Erro ao atualizar quantidade.');
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Erro ao fazer PATCH:', error);
+                            exibirNotificacao('Erro ao atualizar quantidade.');
+                        });
+                }
+            });
+        } else {
+            atualizarLocalmente();
+        }
     };
 
     const removerDoCarrinho = (itemId: number) => {
-        setCarrinho((carrinhoAtual) => {
-            const novoCarrinho = carrinhoAtual.filter((item) => item.id !== itemId);
-            localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
-            return novoCarrinho;
-        });
-        exibirNotificacao('Produto removido do inventário');
+        const removerItem = async () => {
+            try {
+                const usuario = await obterUsuarioLogado();
+
+                if (!usuario?.id) {
+                    exibirNotificacao('Usuário não encontrado para remover o produto.');
+                    return;
+                }
+
+                const response = await fetch('http://localhost:8080/api/carrinho', {
+                    method: 'DELETE',
+                    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ usuarioId: usuario.id, itemId }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao excluir item do carrinho');
+                }
+
+                setCarrinho((carrinhoAtual) => {
+                    const novoCarrinho = carrinhoAtual.filter((item) => item.id !== itemId && item.produtoId !== itemId);
+                    localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
+                    return novoCarrinho;
+                });
+                exibirNotificacao('Produto removido do inventário');
+            } catch (error) {
+                console.error('Erro ao remover item do carrinho:', error);
+                exibirNotificacao('Erro ao remover o produto do inventário.');
+            }
+        };
+
+        removerItem();
     };
 
 
@@ -279,6 +458,7 @@ export default function Loja() {
 
         return {
             id: produto.id,
+            produtoId: produto.id,
             nome: produto.nome,
             descricao: produto.descricao,
             preco: produto.preco,
@@ -286,6 +466,7 @@ export default function Loja() {
             categoria: produto.categoriaResponseDTO?.nome || 'Sem categoria',
             categoriaResponseDTO: produto.categoriaResponseDTO,
             quantidade: 1,
+            fromApi: false,
         };
     };
 
@@ -293,30 +474,149 @@ export default function Loja() {
 
     const adicionarAoCarrinhoComQuantidade = (estoque: EstoqueResponseDTO, quantidade: number) => {
         const produto = normalizarItemCarrinho(estoque);
+        const produtoId = produto.produtoId;
 
         setCarrinho((carrinhoAtual) => {
-            let novoCarrinho;
-            const itemExistente = carrinhoAtual.find((item) => item.id === produto.id);
+            const itemExistente = carrinhoAtual.find((item) => (item.produtoId ?? item.id) === produtoId);
 
             if (itemExistente) {
-                novoCarrinho = carrinhoAtual.map((item) =>
-                    item.id === produto.id
-                        ? { ...item, quantidade: (item.quantidade || 1) + quantidade }
+                // Produto já existe no carrinho
+                const novaQuantidade = (itemExistente.quantidade || 1) + quantidade;
+
+                // Atualizar estado local
+                const novoCarrinho = carrinhoAtual.map((item) =>
+                    (item.produtoId ?? item.id) === produtoId
+                        ? { ...item, quantidade: novaQuantidade }
                         : item
                 );
+                localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
+                exibirNotificacao(`${produto.nome}: quantidade aumentada para ${novaQuantidade}!`);
+
+                // Se é um item da API, fazer PATCH APÓS atualizar o estado
+                if (itemExistente.itemId) {
+                    obterUsuarioLogado().then((usuario) => {
+                        if (usuario?.id) {
+                            fetch('http://localhost:8080/api/carrinho', {
+                                method: 'PATCH',
+                                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                                body: JSON.stringify({ 
+                                    usuarioId: usuario.id, 
+                                    itemId: itemExistente.itemId, 
+                                    quantidade: novaQuantidade 
+                                }),
+                            })
+                                .then((response) => {
+                                    if (!response.ok) {
+                                        console.error('Erro ao atualizar quantidade:', response.status);
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error('Erro ao fazer PATCH:', error);
+                                });
+                        }
+                    });
+                }
+
+                return novoCarrinho;
             } else {
-                novoCarrinho = [...carrinhoAtual, { ...produto, quantidade }];
+                // Novo produto - adicionar ao carrinho
+                const novoCarrinho = [...carrinhoAtual, { ...produto, quantidade }];
+                localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
+                exibirNotificacao(`${produto.nome} foi adicionado ao inventário!`);
+                return novoCarrinho;
             }
-
-            localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
-            return novoCarrinho;
         });
-
-        exibirNotificacao(`${produto.nome} foi adicionado ao inventário!`);
     };
 
     const adicionarAoCarrinho = (estoque: EstoqueResponseDTO) => {
+        if (!isLogged) {
+            exibirNotificacao('Você precisa fazer login para adicionar um produto ao inventário.');
+            return;
+        }
         abrirModalQuantidade(estoque);
+    };
+
+    const handleFinalizarCarrinho = async () => {
+        if (!isLogged) {
+            exibirNotificacao('Você precisa fazer login para finalizar.');
+            return;
+        }
+
+        const usuarioSalvo = localStorage.getItem('usuario_logado');
+        if (!usuarioSalvo) {
+            exibirNotificacao('Dados do usuário não encontrados. Faça login novamente.');
+            return;
+        }
+
+        let email: string | undefined;
+        try {
+            const parsed = JSON.parse(usuarioSalvo);
+            email = parsed.email || parsed.mail || parsed.username;
+        } catch (err) {
+            console.error('Erro ao parsear usuario_logado', err);
+        }
+
+        if (!email) {
+            exibirNotificacao('Email do usuário não encontrado.');
+            return;
+        }
+
+        try {
+            const resUser = await fetch(`http://localhost:8080/api/usuarios/email/${encodeURIComponent(email)}`, { headers: getAuthHeaders() });
+            if (!resUser.ok) {
+                console.error('Erro ao buscar usuário:', await resUser.text());
+                exibirNotificacao('Falha ao recuperar dados do usuário.');
+                return;
+            }
+            const user = await resUser.json();
+            const usuarioId = user?.id;
+            if (!usuarioId) {
+                exibirNotificacao('ID do usuário não encontrado na resposta.');
+                return;
+            }
+
+            if (!carrinho || carrinho.length === 0) {
+                exibirNotificacao('Seu inventário está vazio.');
+                return;
+            }
+
+            // Filtrar apenas itens que não vieram da API (itens novamente adicionados)
+            const itensParaAdicionar = carrinho.filter((item) => !item.fromApi);
+
+            if (itensParaAdicionar.length === 0) {
+                // Todos os itens já estão no carrinho da API, apenas redirecionar
+                localStorage.removeItem('geekbay_cart');
+                setCarrinho([]);
+                exibirNotificacao('Carrinho sincronizado. Redirecionando...');
+                setTimeout(() => router.push('/finalizarCompra'), 900);
+                return;
+            }
+
+            const promises = itensParaAdicionar.map((item) =>
+                fetch('http://localhost:8080/api/carrinho', {
+                    method: 'POST',
+                    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify({ usuarioId, produtoId: item.produtoId ?? item.id, quantidade: item.quantidade || 1 }),
+                })
+            );
+
+            const responses = await Promise.all(promises);
+            const failed = responses.filter((r) => !r.ok);
+            if (failed.length > 0) {
+                console.error('Algumas requisições falharam', failed);
+                exibirNotificacao('Erro ao adicionar alguns itens no carrinho. Tente novamente.');
+                return;
+            }
+
+            // sucesso
+            localStorage.removeItem('geekbay_cart');
+            setCarrinho([]);
+            exibirNotificacao('Itens adicionados ao carrinho. Redirecionando...');
+            setTimeout(() => router.push('/finalizarCompra'), 900);
+        } catch (error) {
+            console.error('Erro ao finalizar:', error);
+            exibirNotificacao('Erro ao finalizar. Tente novamente mais tarde.');
+        }
     };
 
 
@@ -511,17 +811,19 @@ export default function Loja() {
                                         </thead>
                                         <tbody>
                                             {carrinho.map((item, index) => {
-                                                const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === item.id);
+                                                const produtoId = item.produtoId ?? item.id;
+                                                const itemCarrinhoId = item.id;
+                                                const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === produtoId);
                                                 const quantidadeMaxima = estoqueDisponivel?.quantidade || 999;
 
                                                 return (
-                                                    <tr key={item.id || index}>
+                                                    <tr key={itemCarrinhoId || produtoId || index}>
                                                         <td>{item.nome}</td>
                                                         <td>R$ {item.preco}</td>
                                                         <td>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                                                                 <button
-                                                                    onClick={() => atualizarQuantidadeCarrinho(item.id, item.quantidade - 1)}
+                                                                    onClick={() => atualizarQuantidadeCarrinho(produtoId, item.quantidade - 1, item.itemId)}
                                                                     disabled={item.quantidade <= 1}
                                                                     style={{
                                                                         padding: '4px 8px',
@@ -540,7 +842,7 @@ export default function Loja() {
                                                                     {item.quantidade}
                                                                 </span>
                                                                 <button
-                                                                    onClick={() => atualizarQuantidadeCarrinho(item.id, item.quantidade + 1)}
+                                                                    onClick={() => atualizarQuantidadeCarrinho(produtoId, item.quantidade + 1, item.itemId)}
                                                                     disabled={item.quantidade >= quantidadeMaxima}
                                                                     style={{
                                                                         padding: '4px 8px',
@@ -559,7 +861,7 @@ export default function Loja() {
                                                         </td>
                                                         <td>
                                                             <button
-                                                                onClick={() => removerDoCarrinho(item.id)}
+                                                                onClick={() => removerDoCarrinho(itemCarrinhoId)}
                                                                 style={{
                                                                     padding: '6px 12px',
                                                                     fontSize: '12px',
@@ -584,9 +886,9 @@ export default function Loja() {
                             <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '10px' }}>
                                 <strong>Total: R$ {calcularTotal().toFixed(2)}</strong>
                             </div>
-                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                                 <button className={styles.btnAcao} onClick={() => setMostrarCarrinho(false)}>Continuar</button>
-                                <Link href="/finalizarCompra" className={styles.btnAcao} style={{ textDecoration: 'none', textAlign: 'center', fontFamily: 'sans-serif', fontSize: '13px', fontWeight: 'bold' }}>Finalizar</Link>
+                                <button className={styles.btnAcao} style={{ textDecoration: 'none', textAlign: 'center', fontFamily: 'sans-serif', fontSize: '13px', fontWeight: 'bold' }} onClick={handleFinalizarCarrinho}>Finalizar</button>
                             </div>
                         </div>
                     </div>

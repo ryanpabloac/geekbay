@@ -2,8 +2,28 @@
 
 import Link from 'next/link';
 import styles from '../styles/Home.module.css';
+import { useAdminProtection } from './hooks/useAdminProtection';
 
 export default function Home() {
+  // Proteção de acesso - apenas ADMIN
+  const { isAuthorized, isLoading } = useAdminProtection();
+
+  // Se ainda está carregando ou não autorizado, não renderiza o conteúdo
+  if (isLoading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Verificando permissões...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Acesso negado. Você não possui permissão para acessar esta página.</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.corpo } style={{backgroundImage: 'url("/bg-GeekBay.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', minHeight: '100vh', width: '100%'}}>

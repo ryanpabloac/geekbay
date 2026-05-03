@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import styles from "../../styles/Home.module.css";
 import Link from "next/link";
+import { useAdminProtection } from "../hooks/useAdminProtection";
 
 const ModalAviso = ({
   mensagem,
@@ -49,13 +50,7 @@ const ModalAviso = ({
 };
 
 export default function Produtos() {
-  const normalizarListaPedidos = (payload: any): any[] => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.content)) return payload.content;
-    if (Array.isArray(payload?.pedidos)) return payload.pedidos;
-    return [];
-  };
-
+  // Estados e hooks usados pela página (sempre declarar no topo para obedecer às Rules of Hooks)
   const [produtos, setProdutos] = useState<any[]>([]);
   const [estoque, setEstoque] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
@@ -66,21 +61,15 @@ export default function Produtos() {
   const [erroEndereco, setErroEndereco] = useState("");
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [pedidosOriginais, setPedidosOriginais] = useState<any[]>([]);
-  const [pedidoParaExcluir, setPedidoParaExcluir] = useState<number | null>(
-    null,
-  );
+  const [pedidoParaExcluir, setPedidoParaExcluir] = useState<number | null>(null);
   const [mensagemModal, setMensagemModal] = useState("");
   const [mostrarModalBusca, setMostrarModalBusca] = useState(false);
   const [termoBusca, setTermoBusca] = useState("");
   const [pedidoClienteModal, setPedidoClienteModal] = useState<any>(null);
   const [pedidoProdutosModal, setPedidoProdutosModal] = useState<any>(null);
   const [idParaExcluir, setIdParaExcluir] = useState<any>(null);
-  const [editandoEstoqueId, setEditandoEstoqueId] = useState<number | null>(
-    null,
-  );
-  const [formEstoque, setFormEstoque] = useState({
-    quantidade: 0,
-  });
+  const [editandoEstoqueId, setEditandoEstoqueId] = useState<number | null>(null);
+  const [formEstoque, setFormEstoque] = useState({ quantidade: 0 });
 
   // Estados para upload de imagem
   const [arquivoImagemCadastro, setArquivoImagemCadastro] = useState<File | null>(null);
@@ -93,25 +82,73 @@ export default function Produtos() {
   const [produtoModal, setProdutoModal] = useState<any>(null);
   const [carregandoImagemModal, setCarregandoImagemModal] = useState(false);
 
-    // Cadastro de produto
-  const [formCadastrar, setFormCadastrar] = useState({
-    categoria: "",
-    nome: "",
-    preco: "",
-    imagem: "",
-    quantidade: "",
-  });
+  // Cadastro de produto
+  const [formCadastrar, setFormCadastrar] = useState({ categoria: "", nome: "", preco: "", imagem: "", quantidade: "" });
 
-    // Edição de produto
-  const [formEditar, setFormEditar] = useState({
-    id: "",
-    categoria: "",
-    nome: "",
-    preco: "",
-    descricao: "",
-    imagem: "",
-    quantidade: 0,
-  });
+  // Edição de produto
+  const [formEditar, setFormEditar] = useState({ id: "", categoria: "", nome: "", preco: "", descricao: "", imagem: "", quantidade: 0 });
+
+  // Proteção de acesso - apenas ADMIN (chamada após declarar todos os hooks)
+  const { isAuthorized, isLoading } = useAdminProtection();
+
+  // Carrega dados quando usuário for autorizado. Sempre declare o hook antes
+  // de quaisquer `return` para preservar a ordem dos Hooks.
+  useEffect(() => {
+    if (!isAuthorized) return;
+
+    listarTodos();
+    listarEstoque();
+    listarCategorias();
+    listarPedidos();
+    listarClientes();
+  }, [isAuthorized]);
+
+  // Se ainda está carregando ou não autorizado, não renderiza o conteúdo
+  if (isLoading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Verificando permissões...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Acesso negado. Você não possui permissão para acessar esta página.</p>
+      </div>
+    );
+  }
+
+  const getJwtToken = () => {
+    if (typeof window === "undefined") return null;
+
+    return (
+      localStorage.getItem("jwt_token") ||
+      sessionStorage.getItem("jwt_token") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      null
+    );
+  };
+
+  const getAuthHeaders = (extra: Record<string, string> = {}) => {
+    const token = getJwtToken();
+    const base: Record<string, string> = { Accept: "application/json", ...extra };
+
+    if (token) {
+      base.Authorization = `Bearer ${token}`;
+    }
+
+    return base;
+  };
+  const normalizarListaPedidos = (payload: any): any[] => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.content)) return payload.content;
+    if (Array.isArray(payload?.pedidos)) return payload.pedidos;
+    return [];
+  };
+
 
   // Handlers para seleção de arquivo de imagem
   const handleSelecionarImagemCadastro = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,18 +191,10 @@ export default function Produtos() {
     }
   };
 
-  useEffect(() => {
-    listarTodos();
-    listarEstoque();
-    listarCategorias();
-    listarPedidos();
-    listarClientes();
-  }, []);
-
     // Lista clientes - usuários dentro do Back
   const listarClientes = async () => {
     try {
-      const response = await fetch("http://localhost:8080/usuarios");
+      const response = await fetch("http://localhost:8080/api/usuarios", { headers: getAuthHeaders() });
       const dados = await response.json();
       setClientes(dados);
     } catch (error) {
@@ -177,7 +206,7 @@ export default function Produtos() {
     // Retorna lista de ProdutoResponseDTO com campos: id, nome, descricao, preco, imagem, categoriaResponseDTO, ativo
   const listarTodos = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/produto");
+      const response = await fetch("http://localhost:8080/api/produto", { headers: getAuthHeaders() });
       if (!response.ok) throw new Error("Falha na requisição");
       const dados = await response.json();
       setProdutos(dados);
@@ -191,7 +220,7 @@ export default function Produtos() {
     // Retorna lista de EstoqueResponseDTO com campos: quantidade, produtoResponseDTO (id, nome, preco, imagem, categoriaResponseDTO)
   const listarEstoque = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/estoque");
+      const response = await fetch("http://localhost:8080/api/estoque", { headers: getAuthHeaders() });
       if (!response.ok) throw new Error("Falha na requisição");
       const dados = await response.json();
       setEstoque(dados.map(mapEstoque));
@@ -203,7 +232,7 @@ export default function Produtos() {
     // Lista categorias
   const listarCategorias = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/categoria");
+      const response = await fetch("http://localhost:8080/api/categoria", { headers: getAuthHeaders() });
       if (!response.ok) throw new Error();
       const dados = await response.json();
       setCategorias(dados);
@@ -216,7 +245,7 @@ export default function Produtos() {
     // Retorna lista de PedidoResponseDTO do backend Spring Boot
   const listarPedidos = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/pedidos");
+      const response = await fetch("http://localhost:8080/api/pedidos", { headers: getAuthHeaders() });
       if (!response.ok) throw new Error("Falha ao carregar pedidos");
 
       const dados = await response.json();
@@ -249,6 +278,7 @@ export default function Produtos() {
         `http://localhost:8080/api/pedidos/${pedidoParaExcluir}`,
         {
           method: "DELETE",
+          headers: getAuthHeaders(),
         },
       );
 
@@ -278,7 +308,7 @@ export default function Produtos() {
 
     try {
       // 1. Busca categoria pelo nome para obter o ID
-      const responseCategoria = await fetch(`http://localhost:8080/api/categoria/nome/${formCadastrar.categoria}`);
+      const responseCategoria = await fetch(`http://localhost:8080/api/categoria/nome/${formCadastrar.categoria}`, { headers: getAuthHeaders() });
       if(!responseCategoria.ok) throw new Error("Categoria inexistente");
      
       const categoria = await responseCategoria.json();
@@ -300,12 +330,13 @@ export default function Produtos() {
       const responseProduto = await fetch("http://localhost:8080/api/produto", {
         method: "POST",
         body: formData, // FormData será enviado como multipart/form-data automaticamente
+        headers: getAuthHeaders(),
       });
 
       if (!responseProduto.ok) throw new Error("Erro no cadastro do produto");
 
       // 4. Busca produto cadastrado para obter o ID gerado
-      const responseProdutoCadastrado = await fetch(`http://localhost:8080/api/produto/nome/${formCadastrar.nome}`);
+      const responseProdutoCadastrado = await fetch(`http://localhost:8080/api/produto/nome/${formCadastrar.nome}`, { headers: getAuthHeaders() });
       if(!responseProdutoCadastrado.ok) throw new Error("Erro na busca do produto cadastrado");
       const idProduto = await responseProdutoCadastrado.json();
 
@@ -317,7 +348,7 @@ export default function Produtos() {
 
       await fetch("http://localhost:8080/api/estoque", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(novoEstoque),
       });
 
@@ -369,7 +400,7 @@ export default function Produtos() {
     setCarregandoImagemModal(true);
     try {
       const UUID = produto.imagem;
-      const response = await fetch(`http://localhost:8080/image/${UUID}`);
+      const response = await fetch(`http://localhost:8080/image/${UUID}`, { headers: getAuthHeaders() });
       if (!response.ok) throw new Error("Falha ao carregar imagem");
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -397,7 +428,8 @@ export default function Produtos() {
     try {
       // 1. Busca categoria pelo nome para obter o ID atualizado
       const categoriaAtualizada = await fetch(
-        `http://localhost:8080/api/categoria/nome/${formEditar.categoria}`
+        `http://localhost:8080/api/categoria/nome/${formEditar.categoria}`,
+        { headers: getAuthHeaders() }
       );
       if (!categoriaAtualizada.ok) throw new Error("Categoria não encontrada.");
       const categoriaAtualizadaResponse = await categoriaAtualizada.json();
@@ -422,6 +454,7 @@ export default function Produtos() {
       const response = await fetch(`http://localhost:8080/api/produto/${formEditar.id}`, {
         method: "PUT",
         body: formData,
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) throw new Error("Falha ao atualizar produto");
@@ -431,7 +464,7 @@ export default function Produtos() {
       // Espera EstoqueRequestDTO: { quantidade, produto_id }
       await fetch(`http://localhost:8080/api/estoque/produto/${formEditar.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           quantidade: Number(formEditar.quantidade),
           produto_id: formEditar.id,
@@ -468,7 +501,7 @@ export default function Produtos() {
     try {
       const response = await fetch(
         `http://localhost:8080/api/produto/${idParaExcluir}`,
-        { method: "DELETE" },
+        { method: "DELETE", headers: getAuthHeaders() },
       );
       if (!response.ok) throw new Error("Falha ao excluir produto");
       setIdParaExcluir(null);
@@ -496,7 +529,7 @@ export default function Produtos() {
     try {
       await fetch(`http://localhost:8080/api/estoque/produto/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           quantidade: formEstoque.quantidade,
           produto_id: id,  // Necessário enviar no DTO do backend
@@ -520,7 +553,7 @@ export default function Produtos() {
         `http://localhost:8080/api/pedidos/atualizar/${id}?status=${status}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
         },
       );
       if (!response.ok) throw new Error("Falha ao atualizar status");
@@ -565,6 +598,7 @@ export default function Produtos() {
     try {
       const response = await fetch(
         `http://localhost:8080/api/enderecos/usuario/${usuarioId}`,
+        { headers: getAuthHeaders() }
       );
       if (!response.ok) throw new Error("Falha ao buscar endereço do cliente");
 
