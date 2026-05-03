@@ -74,7 +74,7 @@ export default function Login() {
         }
 
         try {
-            const response = await fetch(`http://localhost:5000/clientes?email=${email}`); 
+            const response = await fetch(`http://localhost:8080/api/usuarios/?email=${email}`); 
             const clientes: Cliente[] = await response.json();
             const clienteEncontrado = clientes[0];
     
