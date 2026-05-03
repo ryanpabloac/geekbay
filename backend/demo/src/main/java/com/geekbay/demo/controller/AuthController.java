@@ -1,8 +1,10 @@
 package com.geekbay.demo.controller;
 
 import com.geekbay.demo.dtos.auth.AuthRequest;
+import com.geekbay.demo.dtos.auth.AuthResponse;
 import com.geekbay.demo.util.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,10 +22,10 @@ public class AuthController {
     JWTUtil jwtUtil;
 
     @PostMapping("/login")
-    public String generateToken(@RequestBody AuthRequest authRequest){
+    public ResponseEntity<AuthResponse> generateToken(@RequestBody AuthRequest authRequest){
         try{
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.email(), authRequest.senha()));
-            return jwtUtil.generateToken(authRequest.email());
+            return ResponseEntity.ok(new AuthResponse(jwtUtil.generateToken(authRequest.email())));
         } catch (Exception e){
             throw e;
         }

@@ -1,6 +1,5 @@
 "use client"; 
 
-import Link from 'next/link';
 import styles from '../../styles/Home.module.css';
 import { useEffect, useState } from 'react'; 
 import { useRouter } from 'next/navigation'; 
@@ -43,6 +42,11 @@ const ModalAviso = ({ mensagem, aoFechar, aoConfirmar }: {
 export default function Login() {
     const [email, setEmail] = useState('');
     const [senha, setSenha] = useState('');
+    const [showCadastro, setShowCadastro] = useState(false);
+    const [nome, setNome] = useState('');
+    const [cpf, setCpf] = useState('');
+    const [telefone, setTelefone] = useState('');
+    const [mostrarSenha, setMostrarSenha] = useState(false);
     const [mensagemModal, setMensagemModal] = useState(''); 
     const router = useRouter(); 
        
@@ -74,24 +78,176 @@ export default function Login() {
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/usuarios/?email=${email}`); 
-            const clientes: Cliente[] = await response.json();
-            const clienteEncontrado = clientes[0];
-    
-            if (clienteEncontrado && clienteEncontrado.senha === senha) {
-                localStorage.setItem('usuario_logado', JSON.stringify(clienteEncontrado));
-               
-                setMensagemModal(`Bem-vindo de volta, ${clienteEncontrado.name}!`);
+            const response = await fetch('http://localhost:8080/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email, senha })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error('Login error:', errText);
+                setMensagemModal('Email ou senha incorretos. Tente novamente!');
+                return;
+            }
+
+            const data = await response.json().catch(() => null);
+            console.log('Resposta do backend:', data);
+            
+            const token = data?.token ?? data?.jwt ?? data?.accessToken ?? null;
+            console.log('Token extraído:', token);
+
+            if (token) {
+                localStorage.setItem('jwt_token', token);
+                localStorage.setItem('usuario_logado', JSON.stringify({ email }));
+                console.log('Token salvo no localStorage');
                 
-                setTimeout(() => {
-                    router.push('/loja');
-                }, 2000);
+                // Extrai email do token para buscar role
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1]));
+                        const emailDoToken = payload.sub || payload.email || email;
+                        console.log('Email extraído do token:', emailDoToken);
+                        
+                        // Busca dados do usuário com o email para obter a role
+                        const responseUsuario = await fetch(
+                            `http://localhost:8080/api/usuarios/email/${emailDoToken}`,
+                            {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            }
+                        );
+
+                        if (responseUsuario.ok) {
+                            const usuarioData = await responseUsuario.json();
+                            console.log('Dados do usuário:', usuarioData);
+                            
+                            const perfil = usuarioData?.perfil || null;
+                            console.log('Perfil do usuário:', perfil);
+
+                            if (perfil === 'ADMIN') {
+                                setMensagemModal('Login realizado com sucesso! Redirecionando...');
+                                setTimeout(() => router.push('/'), 1200);
+                            } else if (perfil === 'CLIENTE') {
+                                setMensagemModal('Login realizado com sucesso! Redirecionando...');
+                                setTimeout(() => router.push('/loja'), 1200);
+                            } else {
+                                setMensagemModal('Login realizado, mas perfil não identificado.');
+                            }
+                        } else {
+                            console.error('Erro ao buscar usuário');
+                            setMensagemModal('Erro ao buscar informações do usuário.');
+                        }
+                    }
+                } catch (decodeError) {
+                    console.error('Erro ao processar token:', decodeError);
+                    setMensagemModal('Erro ao processar token.');
+                }
             } else {
-                setMensagemModal("Email ou senha incorretos. Tente novamente, herói!");
+                setMensagemModal('Login realizado, mas não recebi token do servidor.');
+                console.error('Nenhum token encontrado na resposta');
             }
         } catch (error) {
-            console.error("Erro ao conectar:", error);
-            setMensagemModal("Erro no servidor. Verifique se o banco de dados está online!");
+            console.error('Erro ao conectar:', error);
+            setMensagemModal('Erro no servidor. Verifique se o backend está online!');
+        }
+    };
+
+    const handleRegister = async () => {
+        if (!nome || !cpf || !email || !telefone || !senha) {
+            setMensagemModal('Por favor, preencha todos os campos de cadastro!');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/usuarios', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    nome,
+                    cpf,
+                    email,
+                    telefone,
+                    senha
+                })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error('Registro error:', errText);
+                setMensagemModal('Erro ao registrar usuário. Verifique os dados.');
+                return;
+            }
+
+            const data = await response.json().catch(() => null);
+            console.log('Resposta do cadastro:', data);
+            
+            const token = data?.token ?? data?.jwt ?? data?.accessToken ?? null;
+            console.log('Token extraído:', token);
+
+            if (token) {
+                localStorage.setItem('jwt_token', token);
+                localStorage.setItem('usuario_logado', JSON.stringify({ nome, email }));
+                console.log('Token salvo no localStorage');
+                
+                // Extrai email do token para buscar role
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1]));
+                        const emailDoToken = payload.sub || payload.email || email;
+                        console.log('Email extraído do token:', emailDoToken);
+                        
+                        // Busca dados do usuário com o email para obter a role
+                        const responseUsuario = await fetch(
+                            `http://localhost:8080/api/usuarios/email/${emailDoToken}`,
+                            {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            }
+                        );
+
+                        if (responseUsuario.ok) {
+                            const usuarioData = await responseUsuario.json();
+                            console.log('Dados do usuário:', usuarioData);
+                            
+                            const perfil = usuarioData?.perfil || null;
+                            console.log('Perfil do usuário:', perfil);
+
+                            setMensagemModal('Registro realizado com sucesso! Redirecionando...');
+                            // Novo usuário normalmente é CLIENTE
+                            setTimeout(() => router.push('/loja'), 1200);
+                        } else {
+                            console.error('Erro ao buscar usuário');
+                            setMensagemModal('Registro realizado, mas erro ao buscar informações.');
+                            setTimeout(() => router.push('/loja'), 1200);
+                        }
+                    }
+                } catch (decodeError) {
+                    console.error('Erro ao processar token:', decodeError);
+                    setMensagemModal('Registro realizado, mas erro ao processar token.');
+                    setTimeout(() => router.push('/loja'), 1200);
+                }
+            } else {
+                setMensagemModal('Usuário criado, mas não recebi token do servidor.');
+                console.error('Nenhum token encontrado na resposta de cadastro');
+            }
+        } catch (error) {
+            console.error('Erro ao registrar:', error);
+            setMensagemModal('Erro no servidor ao registrar. Tente novamente mais tarde.');
         }
     };
 
@@ -148,53 +304,127 @@ export default function Login() {
                         flexDirection: 'column',
                         alignItems: 'center'
                     }}>
-                        <h3 style={{ marginBottom: '40px', textAlign: 'center', fontWeight: 'bold' }}>
-                            Faça seu login para mergulhar no mundo GEEK
-                        </h3>
-                        
-                        <input 
-                            className={styles.inputGroup} 
-                            type="email" 
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                        
-                        <input 
-                            className={styles.inputGroup} 
-                            type="password" 
-                            placeholder="Senha"
-                            value={senha}
-                            onChange={(e) => setSenha(e.target.value)}
-                        />
+                        {!showCadastro ? (
+                            <>
+                                <h3 style={{ marginBottom: '24px', textAlign: 'center', fontWeight: 'bold' }}>
+                                    Faça seu login para mergulhar no mundo GEEK
+                                </h3>
 
-                        <div style={{ alignSelf: 'flex-start', marginBottom: '20px' }}>
-                            <p style={{ fontSize: '10px', color: temOitoCaracteres ? '#ff7a00' : '#999', margin: '2px 0' }}>
-                                {temOitoCaracteres ? '✓' : '○'} Mínimo de 8 caracteres
-                            </p>
-                            <p style={{ fontSize: '10px', color: temLetraMaiuscula ? '#ff7a00' : '#999', margin: '2px 0' }}>
-                                {temLetraMaiuscula ? '✓' : '○'} Pelo menos uma letra maiúscula
-                            </p>
-                            <p style={{ fontSize: '10px', color: temNumero ? '#ff7a00' : '#999', margin: '2px 0' }}>
-                                {temNumero ? '✓' : '○'} Pelo menos um número
-                            </p>
-                            <p style={{ fontSize: '10px', color: temSimbolo ? '#ff7a00' : '#999', margin: '2px 0' }}>
-                                {temSimbolo ? '✓' : '○'} Pelo menos um símbolo (!@#...)
-                            </p>
-                        </div>
+                                <input
+                                    className={styles.inputGroup}
+                                    type="email"
+                                    placeholder="Email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
 
-                        <button className={styles.btnAcao} onClick={handleLogin}>
-                            Entrar
-                        </button>
+                                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                    <input
+                                        className={styles.inputGroup}
+                                        type={mostrarSenha ? 'text' : 'password'}
+                                        placeholder="Senha"
+                                        value={senha}
+                                        onChange={(e) => setSenha(e.target.value)}
+                                        style={{ flex: 1 }}
+                                    />
+                                    <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)} aria-label="Alternar visibilidade da senha" style={{ marginLeft: '8px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
+                                        {mostrarSenha ? '🙈' : '👁️'}
+                                    </button>
+                                </div>
 
-                        <Link href="/cadastro" style={{
-                            marginTop: '20px',
-                            color: '#ff7a00',
-                            textDecoration: 'underline',
-                            fontSize: '14px'
-                        }}>
-                            Ou cadastre-se aqui
-                        </Link>
+                                <div style={{ alignSelf: 'flex-start', marginBottom: '20px' }}>
+                                    <p style={{ fontSize: '10px', color: temOitoCaracteres ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                        {temOitoCaracteres ? '✓' : '○'} Mínimo de 8 caracteres
+                                    </p>
+                                    <p style={{ fontSize: '10px', color: temLetraMaiuscula ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                        {temLetraMaiuscula ? '✓' : '○'} Pelo menos uma letra maiúscula
+                                    </p>
+                                    <p style={{ fontSize: '10px', color: temNumero ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                        {temNumero ? '✓' : '○'} Pelo menos um número
+                                    </p>
+                                    <p style={{ fontSize: '10px', color: temSimbolo ? '#ff7a00' : '#999', margin: '2px 0' }}>
+                                        {temSimbolo ? '✓' : '○'} Pelo menos um símbolo (!@#...)
+                                    </p>
+                                </div>
+
+                                <button className={styles.btnAcao} onClick={handleLogin}>
+                                    Entrar
+                                </button>
+
+                                <button onClick={() => setShowCadastro(true)} style={{
+                                    marginTop: '20px',
+                                    color: '#ff7a00',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    textDecoration: 'underline',
+                                    fontSize: '14px',
+                                    cursor: 'pointer'
+                                }}>
+                                    Ou cadastre-se aqui
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <h3 style={{ marginBottom: '24px', textAlign: 'center', fontWeight: 'bold' }}>
+                                    Crie sua conta GeekBay
+                                </h3>
+
+                                <input
+                                    className={styles.inputGroup}
+                                    type="text"
+                                    placeholder="Nome"
+                                    value={nome}
+                                    onChange={(e) => setNome(e.target.value)}
+                                />
+
+                                <input
+                                    className={styles.inputGroup}
+                                    type="text"
+                                    placeholder="CPF"
+                                    value={cpf}
+                                    onChange={(e) => setCpf(e.target.value)}
+                                />
+
+                                <input
+                                    className={styles.inputGroup}
+                                    type="text"
+                                    placeholder="Telefone"
+                                    value={telefone}
+                                    onChange={(e) => setTelefone(e.target.value)}
+                                />
+
+                                <input
+                                    className={styles.inputGroup}
+                                    type="email"
+                                    placeholder="Email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+
+                                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                                    <input
+                                        className={styles.inputGroup}
+                                        type={mostrarSenha ? 'text' : 'password'}
+                                        placeholder="Senha"
+                                        value={senha}
+                                        onChange={(e) => setSenha(e.target.value)}
+                                        style={{ flex: 1 }}
+                                    />
+                                    <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)} aria-label="Alternar visibilidade da senha" style={{ marginLeft: '8px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '18px' }}>
+                                        {mostrarSenha ? '🙈' : '👁️'}
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                                    <button className={styles.btnAcao} onClick={handleRegister}>
+                                        Cadastrar
+                                    </button>
+                                    <button className={styles.btnAcao} style={{ backgroundColor: '#757575' }} onClick={() => setShowCadastro(false)}>
+                                        Voltar
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

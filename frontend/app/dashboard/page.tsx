@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import styles from "../../styles/Home.module.css";
 import Link from "next/link";
+import { useAdminProtection } from "../hooks/useAdminProtection";
 
 type PedidoItemDTO = {
   id: number;
@@ -80,12 +81,38 @@ const formatarData = (isoDate?: string): string => {
 };
 
 export default function DashboardPage() {
+  // Proteção de acesso - apenas ADMIN
+  const { isAuthorized, isLoading } = useAdminProtection();
   const [pedidos, setPedidos] = useState<PedidoDTO[]>([]);
+
+  // Se ainda está carregando ou não autorizado, não renderiza o conteúdo
+  if (isLoading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Verificando permissões...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <p>Acesso negado. Você não possui permissão para acessar esta página.</p>
+      </div>
+    );
+  }
+
+  const getAuthHeaders = (extra: Record<string,string> = {}) => {
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('jwt_token') : null;
+    const base: Record<string,string> = { Accept: 'application/json', ...extra };
+    if (token) base.Authorization = `Bearer ${token}`;
+    return base;
+  };
 
   // Carrega pedidos do backend Spring Boot - Endpoint: GET /api/pedidos
   // Retorna lista de PedidoResponseDTO: { id, dataPedido, status, valorTotal, valorFrete, endereco, usuarioResponseDTO, itens }
   useEffect(() => {
-    fetch("http://localhost:8080/api/pedidos")
+    fetch("http://localhost:8080/api/pedidos", { headers: getAuthHeaders() })
       .then((res) => {
         if (!res.ok) throw new Error("Falha ao carregar pedidos");
         return res.json();
