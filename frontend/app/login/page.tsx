@@ -351,7 +351,7 @@ export default function Login() {
                                     Entrar
                                 </button>
 
-                                <button onClick={() => setShowCadastro(true)} style={{
+                                <button onClick={() => router.push('/cadastro')} style={{
                                     marginTop: '20px',
                                     color: '#ff7a00',
                                     background: 'transparent',

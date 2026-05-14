@@ -32,7 +32,7 @@ export default function FinalizarCompra() {
   const [carregando, setCarregando] = useState(true);
   const [enderecoFrete, setEnderecoFrete] = useState<any>(null);
 
-  const [metodoPagamento, setMetodoPagamento] = useState<"Pix" | "Cartao" | null>(null);
+  const [metodoPagamento, setMetodoPagamento] = useState<"Pix" | "Cartao">("Pix");
 
   useEffect(() => {
     document.body.style.backgroundImage = 'url("./bg-GeekBay.png")';
@@ -121,8 +121,8 @@ export default function FinalizarCompra() {
     };
   }, []);
 
-  const alterarQuantidade = (itemId: number, tipo: "aumentar" | "diminuir") => {
-    const item = itensCarrinho.find(i => i.id === itemId);
+  const alterarQuantidade = (itemPedidoId: number, tipo: "aumentar" | "diminuir") => {
+    const item = itensCarrinho.find(i => i.id === itemPedidoId);
     if (!item) return;
 
     const quantidadeAtual = item.quantidade || 1;
@@ -135,16 +135,19 @@ export default function FinalizarCompra() {
 
     // Atualizar localmente
     const novaLista = itensCarrinho.map((i) =>
-      i.id === itemId ? { ...i, quantidade: novaQuantidade } : i
+      i.id === itemPedidoId ? { ...i, quantidade: novaQuantidade } : i
     );
     setItensCarrinho(novaLista);
+    // Recalcular o total localmente usando a nova lista
+    const novoSubtotal = novaLista.reduce((acc, it) => acc + (it.produto?.preco || 0) * (it.quantidade || 1), 0);
+    setValorTotalCarrinho(novoSubtotal);
 
     // Se é item da API (tem dadosCliente), fazer PATCH
     if (dadosCliente?.id) {
       fetch('http://localhost:8080/api/carrinho', {
         method: 'PATCH',
         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ usuarioId: dadosCliente.id, itemId, quantidade: novaQuantidade }),
+        body: JSON.stringify({ usuarioId: dadosCliente.id, itemPedidoId: itemPedidoId, quantidade: novaQuantidade }),
       })
         .then((response) => {
           if (!response.ok) {
@@ -158,8 +161,14 @@ export default function FinalizarCompra() {
   };
 
   const calcularSubtotal = () => {
-    return itensCarrinho.reduce((acc, item) => acc + item.produto.preco * (item.quantidade || 1), 0);
+    return itensCarrinho.reduce((acc, item) => acc + (item.produto?.preco || 0) * (item.quantidade || 1), 0);
   };
+
+  // Sempre recalcule o subtotal localmente quando a lista de itens mudar
+  useEffect(() => {
+    const subtotal = calcularSubtotal();
+    setValorTotalCarrinho(subtotal);
+  }, [itensCarrinho]);
 
   const lidarComCalculoFrete = () => {
     const consultarCep = async () => {
@@ -212,6 +221,9 @@ export default function FinalizarCompra() {
 
         const novaLista = itensCarrinho.filter((item) => item.id !== itemId);
         setItensCarrinho(novaLista);
+        // Recalcular o total localmente após remoção
+        const novoSubtotal = novaLista.reduce((acc, it) => acc + (it.produto?.preco || 0) * (it.quantidade || 1), 0);
+        setValorTotalCarrinho(novoSubtotal);
       })
       .catch((error) => {
         console.error("Erro ao remover item do carrinho:", error);
@@ -255,60 +267,34 @@ export default function FinalizarCompra() {
   const confirmarCompra = async () => {
     if (!metodoPagamento || !dadosCliente) return;
 
-    // Filtrar apenas itens que NÃO vieram da API (novos itens adicionados)
-    const itensParaAdicionar = itensCarrinho.filter((item) => !item.fromApi);
-
-    // Se não há itens novos, apenas ir para pagamento
-    if (itensParaAdicionar.length === 0) {
-      // Todos os itens já estão no carrinho da API, preparar pedido com todos os itens
-      setEtapaPagamento(true);
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      console.error('Token JWT não encontrado');
       return;
     }
 
-    const novoPedido = {
-      cliente_id: dadosCliente.id,
-      nome_cliente: dadosCliente.nome,
-      status: "Pendente",
-      valor_total: (calcularSubtotal() + valorFrete).toFixed(2),
-      data_pedido: new Date().toISOString().split("T")[0],
-      metodo_pagamento: metodoPagamento,
-      itens: itensParaAdicionar.map((item) => ({
-        produto_id: item.produto.id,
-        nome: item.produto.nome,
-        quantidade: item.quantidade || 1,
-        preco_unitario: item.produto.preco,
-        categoria: item.produto.categoriaResponseDTO.nome,
-      })),
-    };
-
     try {
-      const response = await fetch("http://localhost:5000/pedidos", {
-        method: "POST",
-        headers: getAuthHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(novoPedido),
+      const response = await fetch('http://localhost:8080/api/carrinho/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          usuarioId: dadosCliente.id
+        }),
       });
 
       if (response.ok) {
-        const resEstoque = await fetch("http://localhost:5000/estoque", { headers: getAuthHeaders() });
-        const estoqueAtual = await resEstoque.json();
-
-        for (const item of novoPedido.itens) {
-          const registroEstoque = estoqueAtual.find((e: any) => String(e.produto_id) === String(item.produto_id));
-          if (registroEstoque) {
-            const novaQuantidade = registroEstoque.quantidade_disponivel - item.quantidade;
-            await fetch(`http://localhost:5000/estoque/${registroEstoque.id}`, {
-              method: "PATCH",
-              headers: getAuthHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify({ quantidade_disponivel: novaQuantidade >= 0 ? novaQuantidade : 0 }),
-            });
-          }
-        }
-
         setItensCarrinho([]);
+        setValorTotalCarrinho(0);
         setMostrarAgradecimento(true);
+      } else {
+        console.error('Erro ao processar checkout:', response.status);
       }
     } catch (error) {
-      console.error("Erro ao processar compra:", error);
+      console.error('Erro ao processar compra:', error);
     }
   };
 
@@ -596,14 +582,14 @@ export default function FinalizarCompra() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
               <div style={{ border: "2px solid #FF7A00", borderRadius: "10px", padding: "15px" }}>
                 <p style={{ fontWeight: "bold", marginBottom: "15px" }}>Métodos de Pagamento</p>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px", cursor: "pointer" }} onClick={() => setMetodoPagamento("Pix")}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
                   <div style={{ width: "18px", height: "18px", border: "2px solid #FF7A00", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: metodoPagamento === "Pix" ? "#FF7A00" : "transparent" }}>
                     {metodoPagamento === "Pix" && <span style={{ color: "#fff", fontSize: "12px", fontWeight: "bold" }}>X</span>}
                   </div>
                   <div style={{ width: "15px", height: "15px", backgroundColor: "#FF7A00", transform: "rotate(45deg)" }}></div>
                   <span>Pix</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => setMetodoPagamento("Cartao")}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <div style={{ width: "18px", height: "18px", border: "2px solid #FF7A00", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: metodoPagamento === "Cartao" ? "#FF7A00" : "transparent" }}>
                     {metodoPagamento === "Cartao" && <span style={{ color: "#fff", fontSize: "12px", fontWeight: "bold" }}>X</span>}
                   </div>
@@ -614,7 +600,7 @@ export default function FinalizarCompra() {
               <div style={{ textAlign: "center" }}>
                 <img src="/balao-Finalizar.png" alt="Mascote" style={{ width: "200px" }} />
                 <h3 style={{ fontSize: "22px", margin: "15px 0" }}>TOTAL: R$ {(valorTotalCarrinho + valorFrete).toFixed(2)}</h3>
-                <button className={styles.btnAcao} style={{ width: "100%" }} onClick={confirmarCompra} disabled={!metodoPagamento}>
+                <button className={styles.btnAcao} style={{ width: "100%" }} onClick={confirmarCompra}>
                   FINALIZAR COMPRA
                 </button>
                 <button

@@ -85,6 +85,27 @@ export default function DashboardPage() {
   const { isAuthorized, isLoading } = useAdminProtection();
   const [pedidos, setPedidos] = useState<PedidoDTO[]>([]);
 
+  const getAuthHeaders = (extra: Record<string,string> = {}) => {
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('jwt_token') : null;
+    const base: Record<string,string> = { Accept: 'application/json', ...extra };
+    if (token) base.Authorization = `Bearer ${token}`;
+    return base;
+  };
+
+  // Carrega pedidos do backend Spring Boot - Endpoint: GET /api/pedidos/status/{status}
+  // Retorna lista de PedidoResponseDTO: { id, dataPedido, status, valorTotal, valorFrete, endereco, usuarioResponseDTO, itens }
+  useEffect(() => {
+    if (!isAuthorized) return;
+
+    fetch("http://localhost:8080/api/pedidos/status/PROCESSANDO", { headers: getAuthHeaders() })
+      .then((res) => {
+        if (!res.ok) throw new Error("Falha ao carregar pedidos");
+        return res.json();
+      })
+      .then((dados) => setPedidos(normalizarListaPedidos(dados)))
+      .catch((err) => console.error("Erro ao carregar pedidos do backend:", err));
+  }, [isAuthorized]);
+
   // Se ainda está carregando ou não autorizado, não renderiza o conteúdo
   if (isLoading) {
     return (
@@ -101,25 +122,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const getAuthHeaders = (extra: Record<string,string> = {}) => {
-    const token = (typeof window !== 'undefined') ? localStorage.getItem('jwt_token') : null;
-    const base: Record<string,string> = { Accept: 'application/json', ...extra };
-    if (token) base.Authorization = `Bearer ${token}`;
-    return base;
-  };
-
-  // Carrega pedidos do backend Spring Boot - Endpoint: GET /api/pedidos
-  // Retorna lista de PedidoResponseDTO: { id, dataPedido, status, valorTotal, valorFrete, endereco, usuarioResponseDTO, itens }
-  useEffect(() => {
-    fetch("http://localhost:8080/api/pedidos", { headers: getAuthHeaders() })
-      .then((res) => {
-        if (!res.ok) throw new Error("Falha ao carregar pedidos");
-        return res.json();
-      })
-      .then((dados) => setPedidos(normalizarListaPedidos(dados)))
-      .catch((err) => console.error("Erro ao carregar pedidos do backend:", err));
-  }, []);
 
   const CORES_PIZZA = ["#FF7A00", "#2196F3", "#4CAF50", "#FFC107"];
 
