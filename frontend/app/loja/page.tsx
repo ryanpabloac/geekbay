@@ -150,6 +150,7 @@ export default function Loja() {
     const [estoqueEmEdicao, setEstoqueEmEdicao] = useState<EstoqueResponseDTO | null>(null);
     const [notificacao, setNotificacao] = useState<string | null>(null);
     const [isLogged, setIsLogged] = useState(false);
+    const [mostrarEnderecoObrigatorio, setMostrarEnderecoObrigatorio] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const router = useRouter();
 
@@ -325,7 +326,7 @@ export default function Loja() {
         }, 3000);
     };
 
-    const atualizarQuantidadeCarrinho = (produtoId: number, novaQuantidade: number, itemId?: number) => {
+    const atualizarQuantidadeCarrinho = (produtoId: number, novaQuantidade: number, itemPedidoId?: number) => {
         const estoqueDisponivel = estoques.find(e => e.produtoResponseDTO.id === produtoId);
         const quantidadeMaxima = estoqueDisponivel?.quantidade || 999;
 
@@ -344,7 +345,7 @@ export default function Loja() {
         };
 
         // Se é um item da API (tem itemId), fazer PATCH
-        if (itemId) {
+        if (itemPedidoId) {
             const obterUsuarioLogado = async () => {
                 try {
                     const usuarioSalvo = localStorage.getItem('usuario_logado');
@@ -372,7 +373,7 @@ export default function Loja() {
                     fetch('http://localhost:8080/api/carrinho', {
                         method: 'PATCH',
                         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-                        body: JSON.stringify({ usuarioId: usuario.id, itemId, quantidade: novaQuantidade }),
+                        body: JSON.stringify({ usuarioId: usuario.id, itemPedidoId: itemPedidoId, quantidade: novaQuantidade }),
                     })
                         .then((response) => {
                             if (response.ok) {
@@ -393,7 +394,7 @@ export default function Loja() {
         }
     };
 
-    const removerDoCarrinho = (itemId: number) => {
+    const removerDoCarrinho = (itemPedidoId: number) => {
         const removerItem = async () => {
             try {
                 const usuario = await obterUsuarioLogado();
@@ -406,7 +407,7 @@ export default function Loja() {
                 const response = await fetch('http://localhost:8080/api/carrinho', {
                     method: 'DELETE',
                     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-                    body: JSON.stringify({ usuarioId: usuario.id, itemId }),
+                    body: JSON.stringify({ usuarioId: usuario.id, itemPedidoId: itemPedidoId }),
                 });
 
                 if (!response.ok) {
@@ -414,7 +415,7 @@ export default function Loja() {
                 }
 
                 setCarrinho((carrinhoAtual) => {
-                    const novoCarrinho = carrinhoAtual.filter((item) => item.id !== itemId && item.produtoId !== itemId);
+                    const novoCarrinho = carrinhoAtual.filter((item) => item.id !== itemPedidoId && item.produtoId !== itemPedidoId);
                     localStorage.setItem('geekbay_cart', JSON.stringify(novoCarrinho));
                     return novoCarrinho;
                 });
@@ -501,7 +502,7 @@ export default function Loja() {
                                 headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                                 body: JSON.stringify({ 
                                     usuarioId: usuario.id, 
-                                    itemId: itemExistente.itemId, 
+                                    itemPedidoId: itemExistente.itemId, 
                                     quantidade: novaQuantidade 
                                 }),
                             })
@@ -542,6 +543,8 @@ export default function Loja() {
             return;
         }
 
+        const token = localStorage.getItem('jwt_token');
+
         const usuarioSalvo = localStorage.getItem('usuario_logado');
         if (!usuarioSalvo) {
             exibirNotificacao('Dados do usuário não encontrados. Faça login novamente.');
@@ -572,6 +575,32 @@ export default function Loja() {
             const usuarioId = user?.id;
             if (!usuarioId) {
                 exibirNotificacao('ID do usuário não encontrado na resposta.');
+                return;
+            }
+
+            // Verifica se o usuário tem endereço cadastrado
+            try {
+                const resEnderecos = await fetch(`http://localhost:8080/api/enderecos/usuario/${usuarioId}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                });
+
+                if (!resEnderecos.ok) {
+                    // Mostra tela/aviso e redireciona para cadastro de endereço
+                    setMostrarEnderecoObrigatorio(true);
+                    const destino = token
+                        ? `/cadastro/endereco?token=${encodeURIComponent(token)}`
+                        : '/cadastro/endereco';
+                    setTimeout(() => router.push(destino), 1200);
+                    return;
+                }
+            } catch (err) {
+                console.error('Erro ao verificar endereços do usuário:', err);
+                setMostrarEnderecoObrigatorio(true);
+                const destino = token
+                    ? `/cadastro/endereco?token=${encodeURIComponent(token)}`
+                    : '/cadastro/endereco';
+                setTimeout(() => router.push(destino), 1200);
                 return;
             }
 
@@ -1027,6 +1056,25 @@ export default function Loja() {
                     }}
                 >
                     {notificacao}
+                </div>
+            )}
+
+            {mostrarEnderecoObrigatorio && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modalConteudo} style={{ maxWidth: '500px' }}>
+                        <h3 style={{ color: '#ff7a00' }}>Endereço não cadastrado</h3>
+                        <p style={{ marginTop: '10px' }}>Você precisa cadastrar um endereço antes de finalizar a compra. Redirecionando para o cadastro de endereço...</p>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '18px' }}>
+                            <button onClick={() => {
+                                setMostrarEnderecoObrigatorio(false);
+                                const token = localStorage.getItem('jwt_token');
+                                const destino = token
+                                    ? `/cadastro/endereco?token=${encodeURIComponent(token)}`
+                                    : '/cadastro/endereco';
+                                router.push(destino);
+                            }} className={styles.btnAcao}>Ir para cadastro</button>
+                        </div>
+                    </div>
                 </div>
             )}
 

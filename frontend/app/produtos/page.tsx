@@ -241,11 +241,11 @@ export default function Produtos() {
     }
   };
 
-    // Lista pedidos - Endpoint: GET /api/pedidos
+    // Lista pedidos - Endpoint: GET /api/pedidos/status/{status}
     // Retorna lista de PedidoResponseDTO do backend Spring Boot
   const listarPedidos = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/pedidos", { headers: getAuthHeaders() });
+      const response = await fetch("http://localhost:8080/api/pedidos/status/PROCESSANDO", { headers: getAuthHeaders() });
       if (!response.ok) throw new Error("Falha ao carregar pedidos");
 
       const dados = await response.json();
